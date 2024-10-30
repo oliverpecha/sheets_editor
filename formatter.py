@@ -3,9 +3,7 @@ from typing import Any, Dict
 class SheetFormatter:
     @staticmethod
     def format_worksheet(worksheet: Any, formatting_config: Dict) -> None:
-        """
-        Apply formatting to worksheet
-        """
+        """Apply formatting to worksheet"""
         try:
             values = worksheet.get_all_values()
             if not values:
