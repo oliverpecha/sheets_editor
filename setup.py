@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="sheets_editor",  # Changed from sheets_exporter
+    name="sheets_editor",
     version="0.1.0",
     packages=find_packages(),
     install_requires=[
