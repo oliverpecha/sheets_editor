@@ -83,11 +83,9 @@ class SheetsExporter:
             return spreadsheet.url
             
             # Conditionally delete Sheet1
-            print(f"Spreadsheet before deletion: {spreadsheet}")  # Check before
-            print("Worksheets:", spreadsheet.worksheets())  # Print the value returned by worksheets()
-            if spreadsheet.worksheets() is not None and len(spreadsheet.worksheets()) > 1:  # Check if it's not None first
             if delete_sheet1: 
                 self._delete_empty_sheet1(spreadsheet)
+                
             print(f"Spreadsheet after deletion: {spreadsheet}")  # Check after
             print(f"Data exported to: {spreadsheet.url}")
             return spreadsheet.url
@@ -97,11 +95,17 @@ class SheetsExporter:
             print(f"Error in sheet export: {e}")
             raise
 
-    def _delete_empty_sheet1(self, spreadsheet: Any) -> None:
-        """Deletes Sheet1 if it is empty and the spreadsheet has other sheets."""
-        try:
-            sheet1 = spreadsheet.worksheet("Sheet1")
-            if not sheet1.get_all_values() and len(spreadsheet.worksheets()) > 1:
-                spreadsheet.del_worksheet(sheet1)
-        except gspread.exceptions.WorksheetNotFound:
-            pass
+    def _delete_empty_sheet1(self, spreadsheet: gspread.Spreadsheet) -> None: # Type hint added
+        """Deletes Sheet1 if it's empty and not the only sheet."""
+
+        if spreadsheet.worksheets() is not None and len(spreadsheet.worksheets()) > 1: # Inside the method
+            try:
+                sheet1 = spreadsheet.worksheet("Sheet1")
+                if not sheet1.get_all_values(): # Simplified empty check
+                    spreadsheet.del_worksheet(sheet1)
+                    print("Successfully deleted Sheet1") # Optional print for debugging
+            except gspread.exceptions.WorksheetNotFound:
+                print("Sheet1 not found")
+        else:
+            print("Not deleting Sheet1. Either it's the only sheet or there was an API issue.")
+
