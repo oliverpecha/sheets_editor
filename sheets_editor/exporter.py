@@ -84,6 +84,7 @@ def export_table(self,
         except Exception as e:
             print(f"Error in sheet export: {e}")
             raise
+            
     def _delete_empty_sheet1(self, spreadsheet: gspread.Spreadsheet) -> None:
         """Deletes Sheet1 if it's empty and not the only sheet."""
         if spreadsheet.worksheets() is not None and len(spreadsheet.worksheets()) > 1:
