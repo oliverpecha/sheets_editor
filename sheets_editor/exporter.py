@@ -75,10 +75,12 @@ class SheetsExporter:
             }
             self.formatter.format_worksheet(worksheet, formatting)
 
-            if delete_sheet1:
+            print(f"DEBUG 1: Spreadsheet ID: {spreadsheet.id}") # Verify ID
+            worksheets_list = spreadsheet.worksheets()
+            print(f"DEBUG 2: Worksheets list: {worksheets_list}")
+            if delete_sheet1 and worksheets_list is not None and len(worksheets_list) > 1:
+                print(f"DEBUG 3: Inside deletion block, Spreadsheet ID: {spreadsheet.id}")  # Verify ID again
                 self._delete_empty_sheet1(spreadsheet)
-
-            print(f"Data exported to: {spreadsheet.url}")
             return spreadsheet.url
 
         except Exception as e:
