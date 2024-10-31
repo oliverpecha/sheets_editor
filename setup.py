@@ -7,8 +7,7 @@ setup(
     install_requires=[
         'gspread',
         'google-auth',
-        'pyyaml'
-    ],
+    ], 
     author="Your Name",
     author_email="your.email@example.com",
     description="A package for editing and managing Google Sheets",
