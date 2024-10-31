@@ -83,9 +83,12 @@ class SheetsExporter:
             return spreadsheet.url
             
             # Conditionally delete Sheet1
+            print(f"Spreadsheet before deletion: {spreadsheet}")  # Check before
+            print("Worksheets:", spreadsheet.worksheets())  # Print the value returned by worksheets()
+            if spreadsheet.worksheets() is not None and len(spreadsheet.worksheets()) > 1:  # Check if it's not None first
             if delete_sheet1: 
                 self._delete_empty_sheet1(spreadsheet)
-
+            print(f"Spreadsheet after deletion: {spreadsheet}")  # Check after
             print(f"Data exported to: {spreadsheet.url}")
             return spreadsheet.url
 
