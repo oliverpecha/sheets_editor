@@ -84,7 +84,7 @@ class SheetsExporter:
             
             # Conditionally delete Sheet1
             if delete_sheet1: 
-            self._delete_empty_sheet1(spreadsheet)
+                self._delete_empty_sheet1(spreadsheet)
 
             print(f"Data exported to: {spreadsheet.url}")
             return spreadsheet.url
