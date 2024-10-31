@@ -33,7 +33,7 @@ class SheetsExporter:
                 print(f"Error creating spreadsheet: {e}")
                 raise  # Or handle the error as needed (e.g., return None)
 
-def export_table(self, 
+    def export_table(self, 
                     data: List[Dict],
                     version: str, 
                     sheet_name: str,
