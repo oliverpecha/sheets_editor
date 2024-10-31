@@ -1,8 +1,9 @@
-from google.oauth2.service_account import Credentials
 import gspread
 from typing import Dict, List, Optional, Any
 from .config import SheetConfig
 from .formatter import SheetFormatter
+from google.oauth2.service_account import Credentials
+
 
 class SheetsExporter:
     def __init__(self, credentials: Dict, config: SheetConfig):
@@ -18,7 +19,8 @@ class SheetsExporter:
                     data: List[Dict],
                     version: str, 
                     sheet_name: str,
-                    columns: Optional[List[str]] = None) -> None:
+                    columns: Optional[List[str]] = None,
+                    delete_sheet1: bool = True) -> None:
         """
         Main export method
         
@@ -79,7 +81,24 @@ class SheetsExporter:
 
             print(f"Data exported to: {spreadsheet.url}")
             return spreadsheet.url
+            
+            # Conditionally delete Sheet1
+            if delete_sheet1: 
+            self._delete_empty_sheet1(spreadsheet)
+
+            print(f"Data exported to: {spreadsheet.url}")
+            return spreadsheet.url
+
 
         except Exception as e:
             print(f"Error in sheet export: {e}")
             raise
+
+    def _delete_empty_sheet1(self, spreadsheet: Any) -> None:
+        """Deletes Sheet1 if it is empty and the spreadsheet has other sheets."""
+        try:
+            sheet1 = spreadsheet.worksheet("Sheet1")
+            if not sheet1.get_all_values() and len(spreadsheet.worksheets()) > 1:
+                spreadsheet.del_worksheet(sheet1)
+        except gspread.exceptions.WorksheetNotFound:
+            pass
