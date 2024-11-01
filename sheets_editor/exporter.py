@@ -1,3 +1,4 @@
+
 import gspread
 from typing import Dict, List, Optional, Any
 from .config import SheetConfig
@@ -33,69 +34,59 @@ class SheetsExporter:
                 print(f"Error creating spreadsheet: {e}")
                 raise  # Or handle the error as needed (e.g., return None)
 
-def export_table(self, 
-                 data: List[Dict],
-                 version: str, 
-                 sheet_name: str,
-                 columns: Optional[List[str]] = None,
-                 delete_sheet1: bool = True) -> None:
-    """Exports data to a Google Sheet."""
-    spreadsheet_name = f"{self.config.file_name}_{version}"
-    spreadsheet = self._open_spreadsheet(spreadsheet_name)
-
-    if spreadsheet is None:
-        raise ValueError("Could not open or create spreadsheet")
-
-    try:
-        # Determine columns if not provided
-        if not columns:
-            if data:
-                columns = list(data[0].keys())
-            else:
-                columns = []
-
-        # Remove ignored columns
-        if self.config.ignore_columns and columns:
-            columns = [c for c in columns if c not in self.config.ignore_columns]
-
-        # Ensure we have at least one column to prevent errors when adding worksheet
-        column_count = max(len(columns), 1)
-
-        # Create or get worksheet
+    def export_table(self, 
+                    data: List[Dict],
+                    version: str, 
+                    sheet_name: str,
+                    columns: Optional[List[str]] = None,
+                    delete_sheet1: bool = True) -> None:
+        """Exports data to a Google Sheet."""
+        spreadsheet_name = f"{self.config.file_name}_{version}"
         try:
-            worksheet = spreadsheet.worksheet(sheet_name)
-        except gspread.WorksheetNotFound:
-            worksheet = spreadsheet.add_worksheet(sheet_name, 1000, column_count)
+            spreadsheet = self._open_spreadsheet(spreadsheet_name)
+            if spreadsheet is None:
+                raise ValueError("Could not open or create spreadsheet")
 
-        # Write data
-        worksheet.clear()  # Clear existing data
+            # Determine columns if not provided
+            if not columns and data:
+                columns = list(data[0].keys())
 
-        if columns:
-            worksheet.append_row(columns)  # Append header row
+            # Remove ignored columns
+            if self.config.ignore_columns:
+                columns = [c for c in columns if c not in self.config.ignore_columns]
 
-        rows = [[str(row.get(col, '')) for col in columns] for row in data]  # Create data rows
-        if rows:
-            worksheet.append_rows(rows)
+            # Create or get worksheet
+            try:
+                worksheet = spreadsheet.worksheet(sheet_name)
+            except gspread.WorksheetNotFound:
+                worksheet = spreadsheet.add_worksheet(sheet_name, 1000, len(columns))
 
-        # Apply formatting
-        formatting = {
-            'alternate_rows': True,
-            'row_height': 42,
-            'background_color': self.config.alternate_row_color
-        }
-        self.formatter.format_worksheet(worksheet, formatting)
+            # Write data
+            worksheet.clear()  # Clear existing data
+            worksheet.append_row(columns) # Append header row
+            rows = [[str(row.get(col, '')) for col in columns] for row in data] # Create data rows
+            if rows:
+                worksheet.append_rows(rows) #Append data rows
 
-        print(f"DEBUG 1: Spreadsheet ID: {spreadsheet.id}, https://docs.google.com/spreadsheets/d/{spreadsheet.id}/edit")
-        worksheets_list = spreadsheet.worksheets()
-        print(f"DEBUG 2: Worksheets list: {worksheets_list}")
-        if delete_sheet1 and worksheets_list is not None and len(worksheets_list) > 1:
-            print(f"DEBUG 3: Inside deletion block, Spreadsheet ID: {spreadsheet.id}")
-            self._delete_empty_sheet1(spreadsheet)
-        return spreadsheet.url
+            # Apply formatting
+            formatting = {
+                'alternate_rows': True,
+                'row_height': 42, #Make this configurable later if needed
+                'background_color': self.config.alternate_row_color
+            }
+            self.formatter.format_worksheet(worksheet, formatting)
 
-    except Exception as e:
-        print(f"Error in sheet export: {e}")
-        raise
+            print(f"DEBUG 1: Spreadsheet ID: {spreadsheet.id}, https://docs.google.com/spreadsheets/d/{spreadsheet.id}/edit")
+            worksheets_list = spreadsheet.worksheets()
+            print(f"DEBUG 2: Worksheets list: {worksheets_list}")
+            if delete_sheet1 and worksheets_list is not None and len(worksheets_list) > 1:
+                print(f"DEBUG 3: Inside deletion block, Spreadsheet ID: {spreadsheet.id}")  # Verify ID again
+                self._delete_empty_sheet1(spreadsheet)
+            return spreadsheet.url
+
+        except Exception as e:
+            print(f"Error in sheet export: {e}")
+            raise
             
     def _delete_empty_sheet1(self, spreadsheet: gspread.Spreadsheet) -> None:
         """Deletes Sheet1 if it's empty and not the only sheet."""
