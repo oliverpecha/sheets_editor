@@ -75,7 +75,8 @@ class SheetsExporter:
             }
             self.formatter.format_worksheet(worksheet, formatting)
 
-            print(f"DEBUG 1: Spreadsheet ID: {spreadsheet.id}") # Verify ID            worksheets_list = spreadsheet.worksheets()
+            print(f"DEBUG 1: Spreadsheet ID: {spreadsheet.id}") # Verify ID            
+            worksheets_list = spreadsheet.worksheets()
             print(f"DEBUG 2: Worksheets list: {worksheets_list}")
             if delete_sheet1 and worksheets_list is not None and len(worksheets_list) > 1:
                 print(f"DEBUG 3: Inside deletion block, Spreadsheet ID: {spreadsheet.id}")  # Verify ID again
