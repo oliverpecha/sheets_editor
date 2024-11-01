@@ -1,9 +1,8 @@
 import gspread
 from typing import Dict, List, Optional, Any
-from gspread.utils import ValueInputOption
-from google.oauth2.service_account import Credentials
 from .config import SheetConfig
 from .formatter import SheetFormatter
+from google.oauth2.service_account import Credentials
 
 class SheetsExporter:
     def __init__(self, credentials: Dict, config: SheetConfig):
@@ -17,28 +16,29 @@ class SheetsExporter:
 
     def _open_spreadsheet(self, spreadsheet_name: str):
         """Opens or creates a spreadsheet, handling potential errors."""
-        gc = gspread.authorize(Credentials.from_service_account_info(self.credentials, scopes=self.scope))
+        gc = gspread.authorize(Credentials.from_service_account_info(self.credentials, scopes=self.scope)) #scopes added
         try:
             spreadsheet = gc.open(spreadsheet_name)
             print(f"Opened existing spreadsheet: {spreadsheet_name}")
+            return spreadsheet
         except gspread.SpreadsheetNotFound:
             try:
                 spreadsheet = gc.create(spreadsheet_name)
                 print(f"Created new spreadsheet: {spreadsheet_name}")
-                if self.config.share_with:
+                if self.config.share_with: #Share during creation
                     for email in self.config.share_with:
                         spreadsheet.share(email, perm_type='user', role='writer')
+                return spreadsheet
             except gspread.exceptions.APIError as e:
                 print(f"Error creating spreadsheet: {e}")
-                raise
-        return spreadsheet
+                raise  # Or handle the error as needed (e.g., return None)
 
     def export_table(self, 
-                     data: List[Dict],
-                     version: str, 
-                     sheet_name: str,
-                     columns: Optional[List[str]] = None,
-                     delete_sheet1: bool = True) -> str:
+                    data: List[Dict],
+                    version: str, 
+                    sheet_name: str,
+                    columns: Optional[List[str]] = None,
+                    delete_sheet1: bool = True) -> None:
         """Exports data to a Google Sheet."""
         spreadsheet_name = f"{self.config.file_name}_{version}"
         try:
@@ -54,70 +54,48 @@ class SheetsExporter:
             if self.config.ignore_columns:
                 columns = [c for c in columns if c not in self.config.ignore_columns]
 
-            # Try to get the desired worksheet
+            # Create or get worksheet
             try:
                 worksheet = spreadsheet.worksheet(sheet_name)
-                print(f"Found existing worksheet: {sheet_name}")
             except gspread.WorksheetNotFound:
-                print(f"Worksheet '{sheet_name}' not found.")
-                # Check if 'Sheet1' exists and is empty
-                try:
-                    sheet1 = spreadsheet.worksheet("Sheet1")
-                    sheet1_values = sheet1.get_all_values()
-                    if not sheet1_values or sheet1_values == [['']]:
-                        # 'Sheet1' is empty, rename and use it
-                        sheet1.update_title(sheet_name)
-                        worksheet = sheet1
-                        print(f"Renamed 'Sheet1' to '{sheet_name}' and reusing it.")
-                    else:
-                        # 'Sheet1' has data, create a new worksheet
-                        worksheet = spreadsheet.add_worksheet(title=sheet_name, rows="1000", cols=str(len(columns)))
-                        print(f"Created new worksheet: {sheet_name}")
-                except gspread.WorksheetNotFound:
-                    # 'Sheet1' does not exist, create a new worksheet
-                    worksheet = spreadsheet.add_worksheet(title=sheet_name, rows="1000", cols=str(len(columns)))
-                    print(f"Created new worksheet: {sheet_name}")
+                worksheet = spreadsheet.add_worksheet(sheet_name, 1000, len(columns))
 
-            # Write data to the worksheet
+            # Write data
             worksheet.clear()  # Clear existing data
-            worksheet.append_row(columns)  # Append header row
-            rows = [[str(row.get(col, '')) for col in columns] for row in data]  # Create data rows
+            worksheet.append_row(columns) # Append header row
+            rows = [[str(row.get(col, '')) for col in columns] for row in data] # Create data rows
             if rows:
-                worksheet.append_rows(rows, value_input_option=ValueInputOption.raw)  # Append data rows
+                worksheet.append_rows(rows) #Append data rows
 
             # Apply formatting
             formatting = {
                 'alternate_rows': True,
-                'row_height': 42,  # Make this configurable later if needed
+                'row_height': 42, #Make this configurable later if needed
                 'background_color': self.config.alternate_row_color
             }
             self.formatter.format_worksheet(worksheet, formatting)
 
-            print(f"Data exported successfully to worksheet: {sheet_name}")
-
-            # Optionally delete 'Sheet1' if it's empty and not the only sheet
-            if delete_sheet1:
+            print(f"DEBUG 1: Spreadsheet ID: {spreadsheet.id}, https://docs.google.com/spreadsheets/d/{spreadsheet.id}/edit")
+            worksheets_list = spreadsheet.worksheets()
+            print(f"DEBUG 2: Worksheets list: {worksheets_list}")
+            if delete_sheet1 and worksheets_list is not None and len(worksheets_list) > 1:
+                print(f"DEBUG 3: Inside deletion block, Spreadsheet ID: {spreadsheet.id}")  # Verify ID again
                 self._delete_empty_sheet1(spreadsheet)
-
             return spreadsheet.url
 
         except Exception as e:
             print(f"Error in sheet export: {e}")
             raise
-
+            
     def _delete_empty_sheet1(self, spreadsheet: gspread.Spreadsheet) -> None:
-        """Deletes 'Sheet1' if it's empty and not the only sheet."""
-        worksheets = spreadsheet.worksheets()
-        if len(worksheets) > 1:
+        """Deletes Sheet1 if it's empty and not the only sheet."""
+        if spreadsheet.worksheets() is not None and len(spreadsheet.worksheets()) > 1:
             try:
                 sheet1 = spreadsheet.worksheet("Sheet1")
-                sheet1_values = sheet1.get_all_values()
-                if not sheet1_values or sheet1_values == [['']]:
+                if not sheet1.get_all_values():
                     spreadsheet.del_worksheet(sheet1)
-                    print("Deleted empty 'Sheet1'.")
-                else:
-                    print("'Sheet1' is not empty, not deleting.")
-            except gspread.WorksheetNotFound:
-                print("'Sheet1' not found, nothing to delete.")
+                    print("Successfully deleted Sheet1") #Keep this here for explicit logging
+            except gspread.exceptions.WorksheetNotFound:
+                print("Sheet1 not found")
         else:
-            print("Cannot delete 'Sheet1'. It is the only worksheet in the spreadsheet.")
+            print("Not deleting Sheet1. Either only sheet or API issue.")
