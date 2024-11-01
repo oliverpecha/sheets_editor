@@ -75,8 +75,7 @@ class SheetsExporter:
             }
             self.formatter.format_worksheet(worksheet, formatting)
 
-            print(f"DEBUG 1: Spreadsheet ID: {spreadsheet.id}") # Verify ID  
-            print(f"Spreadsheet Link: https://docs.google.com/spreadsheets/d/{self.spreadsheet.id}/edit")
+            print(f"DEBUG 1: Spreadsheet ID: {spreadsheet.id}https://docs.google.com/spreadsheets/d/{spreadsheet.id}/edit")
             worksheets_list = spreadsheet.worksheets()
             print(f"DEBUG 2: Worksheets list: {worksheets_list}")
             if delete_sheet1 and worksheets_list is not None and len(worksheets_list) > 1:
