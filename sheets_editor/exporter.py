@@ -32,13 +32,13 @@ class SheetsExporter:
             except gspread.exceptions.APIError as e:
                 print(f"Error creating spreadsheet: {e}")
                 raise  # Or handle the error as needed (e.g., return None)
-
+                
 def export_table(self, 
                  data: List[Dict],
                  version: str, 
                  sheet_name: str,
                  columns: Optional[List[str]] = None,
-                 delete_sheet1: bool = True) -> gspread.Spreadsheet:  # Change return type
+                 delete_sheet1: bool = True) -> gspread.Spreadsheet:
     """Exports data to a Google Sheet."""
     spreadsheet_name = f"{self.config.file_name}_{version}"
     try:
