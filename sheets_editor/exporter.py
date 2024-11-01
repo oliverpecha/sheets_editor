@@ -31,16 +31,14 @@ class SheetsExporter:
                 return spreadsheet
             except gspread.exceptions.APIError as e:
                 print(f"Error creating spreadsheet: {e}")
-                raise  # Or handle the error as needed
+                raise  # Re-raise the exception
 
-    def export_table(self, 
-                    data: List[Dict],
-                    version: str, 
-                    sheet_name: str,
-                    columns: Optional[List[str]] = None) -> None:
-        """Exports data to a Google Sheet, overwriting Sheet1 if it's the only sheet."""
+    def export_table(self, data: List[Dict], version: str, sheet_name: str, columns: Optional[List[str]] = None, spreadsheet: Optional[gspread.Spreadsheet] = None) -> None:
+        """Exports data to a Google Sheet, handling existing sheets."""
         spreadsheet_name = f"{self.config.file_name}_{version}"
-        spreadsheet = self._open_spreadsheet(spreadsheet_name)
+
+        if spreadsheet is None:
+            spreadsheet = self._open_spreadsheet(spreadsheet_name)
 
         if spreadsheet is None:
             raise ValueError("Could not open or create spreadsheet")
@@ -54,23 +52,17 @@ class SheetsExporter:
             columns = [c for c in columns if c not in self.config.ignore_columns]
 
         try:
-            worksheet = spreadsheet.worksheet("Sheet1") # Try to get Sheet1
-            if spreadsheet.worksheets() is not None and len(spreadsheet.worksheets()) == 1:
-                worksheet.update_title(sheet_name)  # Rename Sheet1 if it's the only sheet
-            else:
-                worksheet = spreadsheet.add_worksheet(title=sheet_name, rows=1000, cols=len(columns) if columns else 1)  # Explicitly naming parameters for clarity
+            worksheet = spreadsheet.worksheet(sheet_name)
+            worksheet.clear()  # Clear the sheet if it exists
         except gspread.WorksheetNotFound:
-            worksheet = spreadsheet.add_worksheet(title=sheet_name, rows=1000, cols=len(columns) if columns else 1)  # Create if it doesn't exist
+            worksheet = spreadsheet.add_worksheet(title=sheet_name, rows=1000, cols=len(columns) if columns else 1)
 
-
-        # Write data (handling the case where data might be empty)
-        worksheet.clear()
-        if columns:  # Only append header row if there are columns
+        # Write data (handle empty data case)
+        if columns:
             worksheet.append_row(columns)
-        if data:  # Only append data rows if data is not empty
+        if data:
             rows = [[str(row.get(col, '')) for col in columns] for row in data]
             worksheet.append_rows(rows)
-
 
         # Apply formatting
         formatting = {
@@ -80,4 +72,4 @@ class SheetsExporter:
         }
         self.formatter.format_worksheet(worksheet, formatting)
 
-        return spreadsheet.url # Return the spreadsheet URL
+        return spreadsheet.url  # Return the spreadsheet URL
