@@ -41,6 +41,11 @@ class SheetsExporter:
                     delete_sheet1: bool = True) -> None:
         """Exports data to a Google Sheet."""
         spreadsheet_name = f"{self.config.file_name}_{version}"
+        spreadsheet = self._open_spreadsheet(spreadsheet_name) # Moved opening spreadsheet out of try/except
+
+        if spreadsheet is None:  # Handle spreadsheet creation failure before other operations
+            raise ValueError("Could not open or create spreadsheet")
+
         try:
             spreadsheet = self._open_spreadsheet(spreadsheet_name)
             if spreadsheet is None:
