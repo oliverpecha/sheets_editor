@@ -33,7 +33,13 @@ class SheetsExporter:
                 print(f"Error creating spreadsheet: {e}")
                 raise  # Re-raise the exception
 
-    def export_table(self, data: List[Dict], version: str, sheet_name: str, columns: Optional[List[str]] = None, spreadsheet: Optional[gspread.Spreadsheet] = None) -> None:
+    def export_table(
+        self, data: List[Dict], version: str, sheet_name: str,
+        columns: Optional[List[str]] = None,
+        spreadsheet: Optional[gspread.Spreadsheet] = None,
+        formatting: Optional[Dict] = None
+    ) -> None:
+        
         """Exports data to a Google Sheet, handling existing sheets."""
         spreadsheet_name = f"{self.config.file_name}_{version}"
 
@@ -63,13 +69,9 @@ class SheetsExporter:
         if data:
             rows = [[str(row.get(col, '')) for col in columns] for row in data]
             worksheet.append_rows(rows)
+            
+        # Formatting when provided
+        if formatting:
+            self.formatter.format_worksheet(worksheet, formatting)
 
-        # Apply formatting
-        formatting = {
-            'alternate_rows': True,
-            'row_height': 42,
-            'background_color': self.config.alternate_row_color
-        }
-        self.formatter.format_worksheet(worksheet, formatting)
-
-        return spreadsheet.url  # Return the spreadsheet URL
+        return spreadsheet.url
