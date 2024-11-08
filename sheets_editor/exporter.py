@@ -42,27 +42,27 @@ class SheetsExporter:
         
         """Exports data to a Google Sheet, handling existing sheets."""
         spreadsheet_name = f"{self.config.file_name}_{version}"
-
+    
         if spreadsheet is None:
             spreadsheet = self._open_spreadsheet(spreadsheet_name)
-
+    
         if spreadsheet is None:
             raise ValueError("Could not open or create spreadsheet")
-
+    
         # Determine columns if not provided
         if not columns and data:
             columns = list(data[0].keys())
-
+    
         # Remove ignored columns
         if self.config.ignore_columns:
             columns = [c for c in columns if c not in self.config.ignore_columns]
-
+    
         try:
             worksheet = spreadsheet.worksheet(sheet_name)
             worksheet.clear()  # Clear the sheet if it exists
         except gspread.WorksheetNotFound:
             worksheet = spreadsheet.add_worksheet(title=sheet_name, rows=1000, cols=len(columns) if columns else 1)
-
+    
         # Write data (handle empty data case)
         if columns:
             worksheet.append_row(columns)
@@ -70,8 +70,8 @@ class SheetsExporter:
             rows = [[str(row.get(col, '')) for col in columns] for row in data]
             worksheet.append_rows(rows)
             
-        # Formatting when provided
-        if formatting:
+        # Formatting when provided and not an empty dict
+        if formatting and isinstance(formatting, dict) and formatting != {}:
             self.formatter.format_worksheet(worksheet, formatting)
-
+    
         return spreadsheet.url
