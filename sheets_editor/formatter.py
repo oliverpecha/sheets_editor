@@ -3,7 +3,7 @@ from typing import Any, Dict
 class SheetFormatter:
     @staticmethod
     def format_worksheet(worksheet: Any, formatting_config: Dict) -> None:
-        print("Formatting dictionary:", formatting)
+        print("Formatting dictionary:", formatting_config)
         """Apply formatting to worksheet"""
         try:
             print(f"Worksheet object: {worksheet}") # Check the worksheet object
