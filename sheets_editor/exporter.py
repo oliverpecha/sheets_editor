@@ -37,8 +37,8 @@ class SheetsExporter:
         self, data: List[Dict], version: str, sheet_name: str,
         columns: Optional[List[str]] = None,
         spreadsheet: Optional[gspread.Spreadsheet] = None,
-        formatting = None,
-        conditional_format = None
+        formatting: Optional[Dict] = None,
+        conditional_formats: Optional[List[Dict]] = None
     ) -> None:
         """Exports data to a Google Sheet, handling existing sheets."""
         spreadsheet_name = f"{self.config.file_name}_{version}"
@@ -79,6 +79,7 @@ class SheetsExporter:
             print("Formatting about to be applied...")
             #self.formatter.format_worksheet(worksheet, formatting, conditional_formats)
             self.formatter.format_worksheet(worksheet, formatting, conditional_formats or []) # Pass empty list if None
+            
 
         
     
