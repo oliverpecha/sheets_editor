@@ -99,39 +99,52 @@ class SheetFormatter:
 
 
     def _apply_conditional_formatting(self, conditional_formats, sheet_id, num_cols, values):
+        """Applies conditional formatting based on the provided conditions."""
         requests = []
-        header = values[0]
+        header = values[0]  # Assuming the first row contains headers (column names)
+    
         for cond_format in conditional_formats:
-            column_name = cond_format.get('column')
-            if not column_name:
-                print("Missing 'column' key in conditional formatting.")
-                continue
-
-            values_config = cond_format.get('values')
-            condition_func = cond_format.get('condition')
+            conditions = cond_format.get('conditions', [])
             entire_row = cond_format.get('entire_row', False)
             format_style = cond_format.get('format')
-
-            try:
-                col_index = header.index(column_name)
-            except ValueError:
-                print(f"Column '{column_name}' not found for conditional formatting.")
+    
+            # Ensure conditions are provided
+            if not conditions:
+                print("No conditions provided for conditional formatting.")
                 continue
-
+    
+            # Iterate over the data rows (skipping the header row)
             for i, row in enumerate(values[1:], 1):
-                cell_value = row[col_index]
-                try:
-                    if values_config and cell_value in values_config:
-                        requests.append(self._create_request(i, num_cols, sheet_id, values_config[cell_value], entire_row, col_index))
-                    elif condition_func:
-                        try:
-                            int_cell_value = int(cell_value)  # Try converting to int
-                            if condition_func(int_cell_value):
-                                requests.append(self._create_request(i, num_cols, sheet_id, format_style, entire_row, col_index))
-                        except ValueError:
-                            print(f"Non-integer value found in '{column_name}' column: {cell_value}. Skipping conditional formatting for this row.")
-                except TypeError as e:
-                    print(f"Error applying condition: {e}. Skipping row {i + 1}")
+                all_conditions_met = True
+    
+                # Check all conditions for the current row
+                for condition in conditions:
+                    column_name = condition.get('column')
+                    condition_func = condition.get('condition')
+    
+                    if column_name not in header:
+                        print(f"Column '{column_name}' not found in the header.")
+                        all_conditions_met = False
+                        break
+    
+                    try:
+                        col_index = header.index(column_name)
+                        cell_value = row[col_index]
+    
+                        # Try applying the condition function
+                        if not condition_func(cell_value):
+                            all_conditions_met = False
+                            break
+                    except Exception as e:
+                        print(f"Error processing condition for column '{column_name}': {e}")
+                        all_conditions_met = False
+                        break
+    
+                # If all conditions are met, apply the formatting
+                if all_conditions_met:
+                    print(f"Applying formatting to row {i + 1} based on conditions")
+                    requests.append(self._create_request(i, num_cols, sheet_id, format_style, entire_row, 0))
+    
         return requests
 
    
