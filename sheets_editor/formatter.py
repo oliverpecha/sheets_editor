@@ -6,6 +6,8 @@ class SheetFormatter:
         print("Formatting dictionary:", formatting)
         """Apply formatting to worksheet"""
         try:
+            print(f"Worksheet object: {worksheet}") # Check the worksheet object
+            print("Formatting dictionary:", formatting)
             values = worksheet.get_all_values()
             if not values:
                 return
@@ -58,5 +60,6 @@ class SheetFormatter:
                 worksheet.spreadsheet.batch_update({"requests": requests})
                 
         except Exception as e:
+            print(f"My unexpected error occurred in format_worksheet: {e}")
             print(f"Error in formatting: {e}")
             raise
