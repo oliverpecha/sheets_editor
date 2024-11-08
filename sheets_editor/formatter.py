@@ -7,7 +7,7 @@ class SheetFormatter:
         """Apply formatting to worksheet"""
         try:
             print(f"Worksheet object: {worksheet}") # Check the worksheet object
-            print("Formatting dictionary:", formatting)
+            print("Formatting dictionary:", formatting_config)
             values = worksheet.get_all_values()
             if not values:
                 return
