@@ -107,27 +107,28 @@ class SheetFormatter:
                     requests.append(SheetFormatter._create_request(i, num_cols, sheet_id, format_style, entire_row, col_index))
         return requests
 
-    def _create_request(self, row_index, num_cols, sheet_id, format_style, entire_row, col_index):
-        print("Inside _create_request")  # This should print if the method is called
-        print(f"Arguments: {row_index}, {num_cols}, {sheet_id}, {format_style}, {entire_row}, {col_index}")
 
-        """Creates a batch update request for formatting a cell or row."""
+    def _create_request(self, row_index, num_cols, sheet_id, format_style, entire_row, col_index): #Add self parameter
+    print("Inside _create_request")
+    print(f"Arguments: {row_index}, {num_cols}, {sheet_id}, {format_style}, {entire_row}, {col_index}")
 
-        start_col = 0 if entire_row else col_index
-        end_col = num_cols if entire_row else col_index + 1
-        return {
-            "repeatCell": {
-                "range": {
-                    "sheetId": sheet_id,
-                    "startRowIndex": row_index,
-                    "endRowIndex": row_index+1,
-                    "startColumnIndex": start_col,
-                    "endColumnIndex": end_col
-                },
-                "cell": {
-                    "userEnteredFormat": format_style
-                },
-                "fields": "userEnteredFormat" #Use all fields in format_style
-            }
+    """Creates a batch update request for formatting a cell or row."""
 
+    start_col = 0 if entire_row else col_index
+    end_col = num_cols if entire_row else col_index + 1
+
+    return {
+        "repeatCell": {
+            "range": {
+                "sheetId": sheet_id,
+                "startRowIndex": row_index,
+                "endRowIndex": row_index + 1,
+                "startColumnIndex": start_col,
+                "endColumnIndex": end_col
+            },
+            "cell": {
+                "userEnteredFormat": format_style
+            },
+            "fields": "userEnteredFormat"
         }
+    }
