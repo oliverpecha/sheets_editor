@@ -72,6 +72,6 @@ class SheetsExporter:
         #->>>>>> Only apply formatting if it is provided
         if formatting is not None and formatting != {}:
             self.formatter.format_worksheet(worksheet, formatting)
-        """
+        
     
         return spreadsheet.url
