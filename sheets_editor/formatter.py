@@ -67,11 +67,11 @@ class SheetFormatter:
                         }
                     })
                 if formatting_config.get('background_color'):
-                    requests.append(SheetFormatter._create_request(row-1, num_cols, sheet_id, formatting_config['background_color'], True, 0))
+                    requests.append(self._create_request(row - 1, num_cols, sheet_id, formatting_config['background_color'], True, 0))  # col_index=0
 
         if 'bold_rows' in formatting_config:
              for row in formatting_config['bold_rows']:
-                requests.append(SheetFormatter._create_request(row - 1, num_cols, sheet_id, {'textFormat': {'bold': True}}, True, 0))
+                requests.append(self._create_request(row - 1, num_cols, sheet_id, {'textFormat': {'bold': True}}, True, 0))  # col_index=0
         return requests
 
     def _apply_conditional_formatting(self, conditional_formats, sheet_id, num_cols, values):
