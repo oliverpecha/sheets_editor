@@ -70,10 +70,14 @@ class SheetsExporter:
             worksheet.append_rows(rows)
     
         #->>>>>> Only apply formatting if it is provided
-        print(f"Formatting value in export_table: {formatting}")  # Check the value BEFORE the if
-        if formatting is not None and formatting != {}:
+        #print(f"Formatting value in export_table: {formatting}")  # Check the value BEFORE the if
+        #if formatting is not None and formatting != {}:
+            #self.formatter.format_worksheet(worksheet, formatting)
+
+        if formatting or conditional_formats:
             print("Formatting about to be applied...")
-            self.formatter.format_worksheet(worksheet, formatting)
+            self.formatter.format_worksheet(worksheet, formatting, conditional_formats)
+
         
     
         return spreadsheet.url
