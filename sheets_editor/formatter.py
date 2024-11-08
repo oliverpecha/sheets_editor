@@ -67,10 +67,14 @@ class SheetFormatter:
                         }
                     })
                 if formatting_config.get('background_color'):
+                    print("About to call _create_request for background color")  # Debug print
+                    print(f"Arguments: {row - 1}, {num_cols}, {sheet_id}, {formatting_config['background_color']}, {True}, {0}") # Debug print
                     requests.append(self._create_request(row - 1, num_cols, sheet_id, formatting_config['background_color'], True, 0))  # col_index=0
 
         if 'bold_rows' in formatting_config:
              for row in formatting_config['bold_rows']:
+                print("About to call _create_request for bold rows")
+                print(f"Arguments: {row-1}, {num_cols}, {sheet_id}, {{'textFormat': {{'bold': True}}}}, {True}, {0}")
                 requests.append(self._create_request(row - 1, num_cols, sheet_id, {'textFormat': {'bold': True}}, True, 0))  # col_index=0
         return requests
 
@@ -104,6 +108,9 @@ class SheetFormatter:
         return requests
 
     def _create_request(self, row_index, num_cols, sheet_id, format_style, entire_row, col_index):
+        print("Inside _create_request")  # This should print if the method is called
+        print(f"Arguments: {row_index}, {num_cols}, {sheet_id}, {format_style}, {entire_row}, {col_index}")
+
         """Creates a batch update request for formatting a cell or row."""
 
         start_col = 0 if entire_row else col_index
