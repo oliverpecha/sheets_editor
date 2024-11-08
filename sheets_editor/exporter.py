@@ -77,8 +77,8 @@ class SheetsExporter:
 
         if formatting or conditional_formats:
             print("Formatting about to be applied...")
-            self.formatter.format_worksheet(worksheet, formatting, conditional_formats)
-            #self.formatter.format_worksheet(worksheet, formatting, conditional_formats or []) # Pass empty list if None
+            #self.formatter.format_worksheet(worksheet, formatting, conditional_formats)
+            self.formatter.format_worksheet(worksheet, formatting, conditional_formats or []) # Pass empty list if None
 
         
     
