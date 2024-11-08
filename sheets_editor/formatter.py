@@ -111,16 +111,20 @@ class SheetFormatter:
                     print(f"Error applying condition: {e}. Skipping row {i + 1}")
         return requests
 
-    def _create_request(self, row_index, num_cols, sheet_id, format_style, entire_row, col_index): #Add self parameter
-        print("Inside _create_request")
-        print(f"Arguments: {row_index}, {num_cols}, {sheet_id}, {format_style}, {entire_row}, {col_index}")
-    
-        """Creates a batch update request for formatting a cell or row."""
-    
+    def _create_request(self, row_index, num_cols, sheet_id, format_style, entire_row, col_index):
         start_col = 0 if entire_row else col_index
         end_col = num_cols if entire_row else col_index + 1
-    
-        return {
+
+        user_entered_format = {}
+
+
+        if isinstance(format_style, dict): #If dictionary, it can be bold or other styles
+            user_entered_format.update(format_style)  # Correctly apply other styles like bold
+        elif isinstance(format_style, dict) and all(k in format_style for k in ("red","green","blue")): #If it's a color
+            user_entered_format['backgroundColor'] = format_style # Nest color values under backgroundColor
+        
+        # Create request
+        request = {
             "repeatCell": {
                 "range": {
                     "sheetId": sheet_id,
@@ -130,8 +134,9 @@ class SheetFormatter:
                     "endColumnIndex": end_col
                 },
                 "cell": {
-                    "userEnteredFormat": format_style
+                    "userEnteredFormat": user_entered_format
                 },
-                "fields": "userEnteredFormat"
+                "fields": "userEnteredFormat"  # Or specify more detailed fields if needed
             }
         }
+        return request
