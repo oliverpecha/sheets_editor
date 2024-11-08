@@ -3,20 +3,44 @@ from typing import Any, Dict, List
 class SheetFormatter:
     def __init__(self):
       pass #Needed if no instance attributes
+        
+    def _create_request(self, row_index, num_cols, sheet_id, format_style, entire_row, col_index):
+        start_col = 0 if entire_row else col_index
+        end_col = num_cols if entire_row else col_index + 1
 
-    def format_worksheet(self, worksheet: Any, formatting_config: Dict = None, conditional_formats: List[Dict] = None) -> None:
-        """Applies formatting to the worksheet.
+        user_entered_format = {}
 
-        Args:
-            worksheet: The gspread worksheet object.
-            formatting_config: A dictionary with absolute formatting settings.
-            conditional_formats: A list of dictionaries with conditional formatting settings.
-        """
+        if isinstance(format_style, dict):
+            if all(k in format_style for k in ("red", "green", "blue")):
+                user_entered_format['backgroundColor'] = format_style
+            else:
+                user_entered_format.update(format_style)
+
+        return {
+            "repeatCell": {
+                "range": {
+                    "sheetId": sheet_id,
+                    "startRowIndex": row_index,
+                    "endRowIndex": row_index + 1,
+                    "startColumnIndex": start_col,
+                    "endColumnIndex": end_col
+                },
+                "cell": {
+                    "userEnteredFormat": user_entered_format
+                },
+                "fields": "userEnteredFormat"  # Or specify more detailed fields if needed
+            }
+        }
+
+
+    def format_worksheet(self, worksheet, formatting_config=None, conditional_formats=None):
+        """Applies formatting to the worksheet."""
+
         if not formatting_config and not conditional_formats:
             return
 
         try:
-            values = worksheet.get_all_values() #Get values here
+            values = worksheet.get_all_values()
             if not values:
                 return
 
@@ -26,7 +50,7 @@ class SheetFormatter:
             requests = []
 
             if formatting_config:
-                requests.extend(self._apply_absolute_formatting(formatting_config, sheet_id, num_rows, num_cols, values)) # Pass values here
+                requests.extend(self._apply_absolute_formatting(formatting_config, sheet_id, num_rows, num_cols, values))
 
             if conditional_formats:
                 requests.extend(self._apply_conditional_formatting(conditional_formats, sheet_id, num_cols, values))
@@ -34,18 +58,17 @@ class SheetFormatter:
             if requests:
                 worksheet.spreadsheet.batch_update({"requests": requests})
 
-
         except Exception as e:
             print(f"Error in formatting: {e}")
             raise
+            
+    
+
 
             # Batch Update (execute all requests)
-            if requests:
+           ''' if requests:
                 worksheet.spreadsheet.batch_update({"requests": requests})
-
-        except Exception as e:
-            print(f"Error in formatting: {e}")
-            raise
+'''
 
     def _apply_absolute_formatting(self, formatting_config, sheet_id, num_rows, num_cols, values):
         requests = []
@@ -111,32 +134,4 @@ class SheetFormatter:
                     print(f"Error applying condition: {e}. Skipping row {i + 1}")
         return requests
 
-    def _create_request(self, row_index, num_cols, sheet_id, format_style, entire_row, col_index):
-        start_col = 0 if entire_row else col_index
-        end_col = num_cols if entire_row else col_index + 1
-
-        user_entered_format = {}
-
-
-        if isinstance(format_style, dict): #If dictionary, it can be bold or other styles
-            user_entered_format.update(format_style)  # Correctly apply other styles like bold
-        elif isinstance(format_style, dict) and all(k in format_style for k in ("red","green","blue")): #If it's a color
-            user_entered_format['backgroundColor'] = format_style # Nest color values under backgroundColor
-        
-        # Create request
-        request = {
-            "repeatCell": {
-                "range": {
-                    "sheetId": sheet_id,
-                    "startRowIndex": row_index,
-                    "endRowIndex": row_index + 1,
-                    "startColumnIndex": start_col,
-                    "endColumnIndex": end_col
-                },
-                "cell": {
-                    "userEnteredFormat": user_entered_format
-                },
-                "fields": "userEnteredFormat"  # Or specify more detailed fields if needed
-            }
-        }
-        return request
+   
