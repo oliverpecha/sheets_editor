@@ -41,11 +41,11 @@ class SheetsExporter:
         conditional_formats: Optional[List[Dict]] = None
     ) -> None:
         """Exports data to a Google Sheet, handling existing sheets."""
+        
         spreadsheet_name = f"{self.config.file_name}_{version}"
-    
         if spreadsheet is None:
             spreadsheet = self._open_spreadsheet(spreadsheet_name)
-    
+        
         if spreadsheet is None:
             raise ValueError("Could not open or create spreadsheet")
     
@@ -59,28 +59,20 @@ class SheetsExporter:
     
         try:
             worksheet = spreadsheet.worksheet(sheet_name)
-            worksheet.clear()  # Clear the sheet if it exists
+            worksheet.clear()  # Clear existing sheet if it exists
         except gspread.WorksheetNotFound:
-            worksheet = spreadsheet.add_worksheet(title=sheet_name, rows=1000, cols=len(columns) if columns else 1)
+            worksheet = spreadsheet.add_worksheet(title=sheet_name, rows=1000, cols=len(columns))
     
-        # Write data (handle empty data case)
+        # Write headers and data
         if columns:
             worksheet.append_row(columns)
         if data:
             rows = [[str(row.get(col, '')) for col in columns] for row in data]
             worksheet.append_rows(rows)
     
-        #->>>>>> Only apply formatting if it is provided
-        #print(f"Formatting value in export_table: {formatting}")  # Check the value BEFORE the if
-        #if formatting is not None and formatting != {}:
-            #self.formatter.format_worksheet(worksheet, formatting)
-
+        # Apply formatting if provided
         if formatting or conditional_formats:
-            print("Formatting about to be applied...")
-            #self.formatter.format_worksheet(worksheet, formatting, conditional_formats)
-            self.formatter.format_worksheet(worksheet, formatting, conditional_formats or []) # Pass empty list if None
-            
-
-        
-    
+            print("Applying formatting...")
+            self.formatter.format_worksheet(worksheet, formatting, conditional_formats or [])
+         
         return spreadsheet.url
