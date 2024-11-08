@@ -71,6 +71,7 @@ class SheetsExporter:
     
         #->>>>>> Only apply formatting if it is provided
         if formatting is not None and formatting != {}:
+            print("Formatting about to be applied...")
             self.formatter.format_worksheet(worksheet, formatting)
         
     
