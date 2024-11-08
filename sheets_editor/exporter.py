@@ -34,7 +34,6 @@ class SheetsExporter:
                 raise  # Re-raise the exception
 
     def export_table(
-        def export_table(self, ..., formatting=None, conditional_formats=None):  # Explicitly make conditional_formats optional
         self, data: List[Dict], version: str, sheet_name: str,
         columns: Optional[List[str]] = None,
         spreadsheet: Optional[gspread.Spreadsheet] = None,
