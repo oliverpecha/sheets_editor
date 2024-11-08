@@ -97,10 +97,18 @@ class SheetFormatter:
 
             for i, row in enumerate(values[1:], 1):
                 cell_value = row[col_index]
-                if values_config and cell_value in values_config:
-                    requests.append(self._create_request(i, num_cols, sheet_id, values_config[cell_value], entire_row, col_index))
-                elif condition_func and condition_func(cell_value):
-                    requests.append(self._create_request(i, num_cols, sheet_id, format_style, entire_row, col_index))
+                try:
+                    if values_config and cell_value in values_config:
+                        requests.append(self._create_request(i, num_cols, sheet_id, values_config[cell_value], entire_row, col_index))
+                    elif condition_func:
+                        try:
+                            int_cell_value = int(cell_value)  # Try converting to int
+                            if condition_func(int_cell_value):
+                                requests.append(self._create_request(i, num_cols, sheet_id, format_style, entire_row, col_index))
+                        except ValueError:
+                            print(f"Non-integer value found in '{column_name}' column: {cell_value}. Skipping conditional formatting for this row.")
+                except TypeError as e:
+                    print(f"Error applying condition: {e}. Skipping row {i + 1}")
         return requests
 
     def _create_request(self, row_index, num_cols, sheet_id, format_style, entire_row, col_index): #Add self parameter
