@@ -39,7 +39,6 @@ class SheetsExporter:
         spreadsheet: Optional[gspread.Spreadsheet] = None,
         formatting: Optional[Dict] = None
     ) -> None:
-        
         """Exports data to a Google Sheet, handling existing sheets."""
         spreadsheet_name = f"{self.config.file_name}_{version}"
     
@@ -69,9 +68,9 @@ class SheetsExporter:
         if data:
             rows = [[str(row.get(col, '')) for col in columns] for row in data]
             worksheet.append_rows(rows)
-            
-        # Formatting when provided and not an empty dict
-        if formatting and isinstance(formatting, dict) and formatting != {}:
+    
+        # Only apply formatting if it is provided
+        if formatting is not None and formatting != {}:
             self.formatter.format_worksheet(worksheet, formatting)
     
         return spreadsheet.url
