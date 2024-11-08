@@ -12,7 +12,6 @@ class SheetsExporter:
             'https://www.googleapis.com/auth/spreadsheets',
             'https://www.googleapis.com/auth/drive'
         ]
-        #->>>could remove
         self.formatter = SheetFormatter()
 
     def _open_spreadsheet(self, spreadsheet_name: str):
@@ -38,7 +37,7 @@ class SheetsExporter:
         self, data: List[Dict], version: str, sheet_name: str,
         columns: Optional[List[str]] = None,
         spreadsheet: Optional[gspread.Spreadsheet] = None,
-        #->>>>>>formatting: Optional[Dict] = None
+        Optional[Dict] = None
     ) -> None:
         """Exports data to a Google Sheet, handling existing sheets."""
         spreadsheet_name = f"{self.config.file_name}_{version}"
@@ -71,7 +70,7 @@ class SheetsExporter:
             worksheet.append_rows(rows)
     
         #->>>>>> Only apply formatting if it is provided
-        """if formatting is not None and formatting != {}:
+        if formatting is not None and formatting != {}:
             self.formatter.format_worksheet(worksheet, formatting)
         """
     
