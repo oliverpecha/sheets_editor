@@ -67,16 +67,13 @@ class SheetFormatter:
                         }
                     })
                 if formatting_config.get('background_color'):
-                    print("About to call _create_request for background color")  # Debug print
-                    print(f"Arguments: {row - 1}, {num_cols}, {sheet_id}, {formatting_config['background_color']}, {True}, {0}") # Debug print
-                    requests.append(self._create_request(row - 1, num_cols, sheet_id, formatting_config['background_color'], True, 0))  # col_index=0
+                    requests.append(self._create_request(row - 1, num_cols, sheet_id, formatting_config['background_color'], True, 0))  # col_index=0 for entire row
 
         if 'bold_rows' in formatting_config:
-             for row in formatting_config['bold_rows']:
-                print("About to call _create_request for bold rows")
-                print(f"Arguments: {row-1}, {num_cols}, {sheet_id}, {{'textFormat': {{'bold': True}}}}, {True}, {0}")
-                requests.append(self._create_request(row - 1, num_cols, sheet_id, {'textFormat': {'bold': True}}, True, 0))  # col_index=0
+            for row in formatting_config['bold_rows']:
+                requests.append(self._create_request(row - 1, num_cols, sheet_id, {'textFormat': {'bold': True}}, True, 0))  # col_index=0 for entire row
         return requests
+
 
     def _apply_conditional_formatting(self, conditional_formats, sheet_id, num_cols, values):
         requests = []
@@ -101,12 +98,10 @@ class SheetFormatter:
             for i, row in enumerate(values[1:], 1):
                 cell_value = row[col_index]
                 if values_config and cell_value in values_config:
-                    requests.append(SheetFormatter._create_request(i, num_cols, sheet_id, values_config[cell_value], entire_row, col_index))
-
-                elif condition_func and condition_func(cell_value):  # Corrected condition
-                    requests.append(SheetFormatter._create_request(i, num_cols, sheet_id, format_style, entire_row, col_index))
+                    requests.append(self._create_request(i, num_cols, sheet_id, values_config[cell_value], entire_row, col_index))
+                elif condition_func and condition_func(cell_value):
+                    requests.append(self._create_request(i, num_cols, sheet_id, format_style, entire_row, col_index))
         return requests
-
 
     def _create_request(self, row_index, num_cols, sheet_id, format_style, entire_row, col_index): #Add self parameter
         print("Inside _create_request")
