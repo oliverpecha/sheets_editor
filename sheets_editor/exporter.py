@@ -37,7 +37,7 @@ class SheetsExporter:
         self, data: List[Dict], version: str, sheet_name: str,
         columns: Optional[List[str]] = None,
         spreadsheet: Optional[gspread.Spreadsheet] = None,
-        Optional[Dict] = None
+        formatting: Optional[Dict] = None 
     ) -> None:
         """Exports data to a Google Sheet, handling existing sheets."""
         spreadsheet_name = f"{self.config.file_name}_{version}"
