@@ -16,7 +16,7 @@ class SheetFormatter:
             return
 
         try:
-            values = worksheet.get_all_values()
+            values = worksheet.get_all_values() #Get values here
             if not values:
                 return
 
@@ -26,13 +26,14 @@ class SheetFormatter:
             requests = []
 
             if formatting_config:
-                requests.extend(SheetFormatter._apply_absolute_formatting(formatting_config, sheet_id, num_rows, num_cols, values))
+                requests.extend(self._apply_absolute_formatting(formatting_config, sheet_id, num_rows, num_cols, values)) # Pass values here
 
             if conditional_formats:
-                requests.extend(SheetFormatter._apply_conditional_formatting(conditional_formats, sheet_id, num_cols, values))
+                requests.extend(self._apply_conditional_formatting(conditional_formats, sheet_id, num_cols, values))
 
             if requests:
                 worksheet.spreadsheet.batch_update({"requests": requests})
+
 
         except Exception as e:
             print(f"Error in formatting: {e}")
