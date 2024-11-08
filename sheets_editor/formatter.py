@@ -1,7 +1,10 @@
 from typing import Any, Dict, List
 
 class SheetFormatter:
-    def format_worksheet(worksheet: Any, formatting_config: Dict = None, conditional_formats: List[Dict] = None) -> None:
+    def __init__(self):
+      pass #Needed if no instance attributes
+
+    def format_worksheet(self, worksheet: Any, formatting_config: Dict = None, conditional_formats: List[Dict] = None) -> None:
         """Applies formatting to the worksheet.
 
         Args:
@@ -43,7 +46,7 @@ class SheetFormatter:
             print(f"Error in formatting: {e}")
             raise
 
-    def _apply_absolute_formatting(formatting_config, sheet_id, num_rows, num_cols, values):
+    def _apply_absolute_formatting(self, formatting_config, sheet_id, num_rows, num_cols, values):
         requests = []
         if formatting_config.get('alternate_rows'):
             for row in range(2, num_rows + 1, 2):
@@ -70,7 +73,7 @@ class SheetFormatter:
                 requests.append(SheetFormatter._create_request(row - 1, num_cols, sheet_id, {'textFormat': {'bold': True}}, True, 0))
         return requests
 
-    def _apply_conditional_formatting(conditional_formats, sheet_id, num_cols, values):
+    def _apply_conditional_formatting(self, conditional_formats, sheet_id, num_cols, values):
         requests = []
         header = values[0]
         for cond_format in conditional_formats:
@@ -99,7 +102,7 @@ class SheetFormatter:
                     requests.append(SheetFormatter._create_request(i, num_cols, sheet_id, format_style, entire_row, col_index))
         return requests
 
-    def _create_request(row_index, num_cols, sheet_id, format_style, entire_row, col_index):
+    def _create_request(self, row_index, num_cols, sheet_id, format_style, entire_row, col_index):
         """Creates a batch update request for formatting a cell or row."""
 
         start_col = 0 if entire_row else col_index
