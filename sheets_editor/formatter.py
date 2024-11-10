@@ -1,24 +1,20 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Union
 
 class SheetFormatter:
     def __init__(self):
-        pass  # Needed if no instance attributes
+        pass
 
-    def _create_request(self, row_index, num_cols, sheet_id, format_style, entire_row, col_index):
-        """
-        Creates a formatting request for a specific cell or the entire row.
-        """
+    def _create_request(self, row_index: int, num_cols: int, sheet_id: int, format_style: Dict[str, Any], 
+                        entire_row: bool, col_index: Optional[int] = None) -> Dict[str, Any]:
+        """Creates a formatting request."""
+
         start_col = 0 if entire_row else col_index
         end_col = num_cols if entire_row else col_index + 1
 
         user_entered_format = {}
 
-        # Handle background color and other format styles
-        if isinstance(format_style, dict):
-            if all(k in format_style for k in ("red", "green", "blue")):
-                user_entered_format['backgroundColor'] = format_style
-            else:
-                user_entered_format.update(format_style)
+        if format_style:
+            user_entered_format.update(format_style)
 
         return {
             "repeatCell": {
@@ -32,39 +28,53 @@ class SheetFormatter:
                 "cell": {
                     "userEnteredFormat": user_entered_format
                 },
-                "fields": "userEnteredFormat"  # Or specify more detailed fields if needed
+                "fields": ",".join(user_entered_format.keys()) if user_entered_format else ""
             }
         }
 
+    def _merge_format_styles(self, existing_style: Dict[str, Any], new_style: Dict[str, Any]) -> Dict[str, Any]:
+        """Merges existing and new format styles, handling text formatting conflicts."""
+
+        merged_style = existing_style.copy()
+        merged_style.update(new_style) #This does the initial merging of both top level dictionaries
+
+        #textFormat special handling
+        if "textFormat" in new_style:
+          merged_style.setdefault("textFormat", {}).update(new_style["textFormat"])
+
+        return merged_style
+
+
+
     def format_worksheet(self, worksheet, formatting_config=None, conditional_formats=None):
-        """Applies formatting to the worksheet."""
-        if not formatting_config and not conditional_formats:
+        """Applies formatting and handles merging."""
+
+        values = worksheet.get_all_values()
+        if not values:
             return
 
-        # Debug print to check what conditional formats are being passed
-        print(f"Conditional Formats: {conditional_formats}")
+        header = values[0]
+        num_cols = len(header)
+        requests = []
+        existing_formats = {}
 
-        try:
-            values = worksheet.get_all_values()
-            if not values:
-                return
+        if formatting_config:
+            requests.extend(self._apply_absolute_formatting(formatting_config, worksheet._properties['sheetId'], len(values), num_cols, values))
+            for req in requests:
+                if "repeatCell" in req:
+                    row_index = req["repeatCell"]["range"]["startRowIndex"]
+                    existing_formats[row_index] = req["repeatCell"]["cell"]["userEnteredFormat"]
 
-            header = values[0]  # Get the header (first row)
-            num_cols = len(header)  # Calculate number of columns from the header
-            requests = []
+        if conditional_formats:
+            requests.extend(self._apply_conditional_formatting(
+                conditional_formats, 
+                worksheet._properties['sheetId'], 
+                values, 
+                existing_formats
+            ))
 
-            if formatting_config:
-                requests.extend(self._apply_absolute_formatting(formatting_config, worksheet._properties['sheetId'], len(values), num_cols, values))
-
-            if conditional_formats:
-                requests.extend(self._apply_conditional_formatting(conditional_formats, worksheet._properties['sheetId'], values))
-
-            if requests:
-                worksheet.spreadsheet.batch_update({"requests": requests})
-
-        except Exception as e:
-            print(f"Error in formatting: {e}")
-            raise
+        if requests:
+            worksheet.spreadsheet.batch_update({"requests": requests})
 
     def _apply_absolute_formatting(self, formatting_config, sheet_id, num_rows, num_cols, values):
         requests = []
@@ -86,95 +96,83 @@ class SheetFormatter:
                         }
                     })
                 if formatting_config.get('background_color'):
-                    requests.append(self._create_request(row - 1, num_cols, sheet_id, formatting_config['background_color'], True, 0))  # col_index=0 for entire row
+                    requests.append(self._create_request(row - 1, num_cols, sheet_id, formatting_config['background_color'], True, 0))
 
         if 'bold_rows' in formatting_config:
             for row in formatting_config['bold_rows']:
-                requests.append(self._create_request(row - 1, num_cols, sheet_id, {'textFormat': {'bold': True}}, True, 0))  # col_index=0 for entire row
+                requests.append(self._create_request(row - 1, num_cols, sheet_id, {'textFormat': {'bold': True}}, True, 0))
         return requests
 
-    def _apply_conditional_formatting(self, conditional_formats, sheet_id, values):
-        """Main method to apply conditional formatting based on the provided conditions."""
+
+
+    def _apply_conditional_formatting(self, conditional_formats, sheet_id, values, existing_formats):
+        """Applies conditional formatting based on provided conditions and merges with existing styles."""
         requests = []
-        header = values[0]  # Assuming the first row contains headers (column names)
-        num_cols = len(header)  # Calculate number of columns from the header
-    
+        header = values[0]
+        num_cols = len(header)
+
         for cond_format in conditional_formats:
             conditions = cond_format.get('conditions', [])
             format_name = cond_format.get('name', 'Unnamed Format')
             formatting_type = cond_format.get('type', 'case_specific')
-            
-            # Default to entire_row as False if not specified
             entire_row = cond_format.get('entire_row', False)
-            extra_columns = cond_format.get('extra_columns', [])  # Get extra columns to format
-    
+            extra_columns = cond_format.get('extra_columns', [])
+
             print(f"Processing conditional format '{format_name}' of type '{formatting_type}' with conditions: {conditions}")
-    
+
             if not conditions:
                 print("No conditions provided for conditional formatting.")
                 continue
-    
-            # Iterate over the data rows (skipping the header row)
-            for i, row in enumerate(values[1:], 1):  # Start from the second row (data rows)
+
+            for i, row in enumerate(values[1:], 1):
+                format_style = {}
+                col_index = None
+
                 if formatting_type == 'case_specific':
-                    self._apply_case_specific_formatting(requests, i, row, conditions, cond_format, header, sheet_id)
+                    matched_case = False
+                    for index, condition in enumerate(conditions):
+                        if self._check_condition(condition, row, header):
+                            if isinstance(cond_format.get('format'), list):
+                                format_style = cond_format['format'][index]
+                            else:
+                                format_style = cond_format['format']
+                            matched_case = True
+                            break  # Exit after first match
+                    if not matched_case:
+                        continue
+
                 elif formatting_type == 'all_conditions':
-                    self._apply_all_conditions_formatting(requests, i, row, conditions, cond_format, header, sheet_id)
-    
+                    if all(self._check_condition(condition, row, header) for condition in conditions):
+                        format_style = cond_format['format']
+                    else:
+                        continue
+
+                if extra_columns and format_style:
+                    for col_name in extra_columns:
+                        try:
+                            col_index = header.index(col_name)
+                            merged_style = self._merge_format_styles(existing_formats.get(i, {}), format_style)
+
+                            requests.append(self._create_request(i, num_cols, sheet_id, merged_style, entire_row=False, col_index=col_index))
+
+                        except ValueError:
+                            print(f"Column '{col_name}' not found in header.")
+
+                if format_style:
+                    merged_style = self._merge_format_styles(existing_formats.get(i, {}), format_style)
+                    requests.append(self._create_request(i, num_cols, sheet_id, merged_style, entire_row, col_index))
         return requests
-    
-    def _apply_case_specific_formatting(self, requests, row_index, row, conditions, cond_format, header, sheet_id):
-        """Applies case-specific formatting if conditions are met."""
-        for index, condition in enumerate(conditions):
-            column_name = condition.get('column')
-            condition_func = condition.get('condition')
-            format_style = cond_format.get('format')[index] if isinstance(cond_format.get('format'), list) else cond_format.get('format')
-    
-            # Ensure the column exists
-            if column_name not in header:
-                print(f"Column '{column_name}' not found in the header.")
-                continue
-    
-            col_index = header.index(column_name)  # Find the column index
-            cell_value = row[col_index]  # Get the cell's value
-    
-            # Check if the condition is met
-            if condition_func(cell_value):
-                print(f"Applying case-specific formatting for '{cond_format['name']}' on row {row_index + 1}: {cell_value}")
-                if cond_format.get('entire_row', False):
-                    requests.append(self._create_request(row_index, len(header), sheet_id, format_style, True, 0))  # Apply to entire row
-                else:
-                    requests.append(self._create_request(row_index, len(header), sheet_id, format_style, False, col_index))  # Apply to specific column
-    
-    def _apply_all_conditions_formatting(self, requests, row_index, row, conditions, cond_format, header, sheet_id):
-        """Applies formatting if all conditions are met."""
-        all_conditions_met = True
-        for condition in conditions:
-            column_name = condition.get('column')
-            condition_func = condition.get('condition')
-    
-            # Ensure the column exists
-            if column_name not in header:
-                print(f"Column '{column_name}' not found in the header.")
-                all_conditions_met = False
-                break  # Exit the loop since one condition is not met
-    
-            col_index = header.index(column_name)  # Find the column index
-            cell_value = row[col_index]  # Get the cell's value
-    
-            # Check if the condition is met
-            if not condition_func(cell_value):
-                all_conditions_met = False
-                break
-    
-        # If all conditions are met, apply the formatting
-        if all_conditions_met:
-            print(f"Applying all-conditions formatting for '{cond_format['name']}' to row {row_index + 1}")
-            if cond_format.get('entire_row', False):
-                requests.append(self._create_request(row_index, len(header), sheet_id, cond_format.get('format'), True, 0))  # Apply to entire row
-            else:
-                # Apply to extra columns if specified
-                for extra_col in cond_format.get('extra_columns', []):
-                    if extra_col in header:
-                        extra_col_index = header.index(extra_col)
-                        requests.append(self._create_request(row_index, len(header), sheet_id, cond_format.get('format'), False, extra_col_index))  # Apply to extra columns
+
+    def _check_condition(self, condition, row, header):
+        """Checks a single condition against a row."""
+        try:
+            col_name = condition['column']
+            col_index = header.index(col_name)
+            cell_value = row[col_index]
+            return condition['condition'](cell_value)
+        except ValueError:
+            print(f"Column '{condition['column']}' not found in header. Skipping condition.")
+            return False
+        except Exception as e:
+            print(f"Error evaluating condition for column '{condition['column']}': {e}")
+            return False
