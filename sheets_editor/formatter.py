@@ -137,7 +137,7 @@ class SheetFormatter:
         return requests
 
     
-      def _apply_case_specific_formatting(self, requests, row_index, row, conditions, cond_format, header):
+    def _apply_case_specific_formatting(self, requests, row_index, row, conditions, cond_format, header):
         """Applies case-specific formatting if conditions are met."""
         for index, condition in enumerate(conditions):
             column_name = condition.get('column')
