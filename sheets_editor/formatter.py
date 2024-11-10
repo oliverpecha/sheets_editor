@@ -42,6 +42,8 @@ class SheetFormatter:
 
         if not formatting_config and not conditional_formats:
             return
+        # Debug print to check what conditional formats are being passed
+        print(f"Conditional Formats: {conditional_formats}")
 
         try:
             values = worksheet.get_all_values()
@@ -109,6 +111,7 @@ class SheetFormatter:
         
         for cond_format in conditional_formats:
             conditions = cond_format.get('conditions', [])
+            print(f"Processing conditional format with conditions: {conditions}")  # Debug output
             entire_row = cond_format.get('entire_row', False)
             format_style = cond_format.get('format')
 
