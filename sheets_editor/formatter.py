@@ -164,14 +164,22 @@ class SheetFormatter:
             condition_func = condition.get('condition')
             format_style = cond_format.get('format')[index] if isinstance(cond_format.get('format'), list) else cond_format.get('format')
     
-            if check_conditions(row, [condition]):
-                print(f"Applying case-specific formatting for '{cond_format['name']}' on row {row_index + 1}")
+            # Ensure the column exists
+            if column_name not in header:
+                print(f"Column '{column_name}' not found in the header.")
+                continue
+    
+            col_index = header.index(column_name)  # Find the column index
+            cell_value = row[col_index]  # Get the cell's value
+    
+            # Check if the condition is met
+            if condition_func(cell_value):
+                print(f"Applying case-specific formatting for '{cond_format['name']}' on row {row_index + 1}: {cell_value}")
                 if cond_format.get('entire_row', False):
                     requests.append(self._create_request(row_index, num_cols, sheet_id, format_style, True, 0))  # Apply to entire row
                 else:
-                    col_index = header.index(column_name)  # Find the column index
                     requests.append(self._create_request(row_index, num_cols, sheet_id, format_style, False, col_index))  # Apply to specific column
-    
+                    
     def apply_all_conditions_formatting(requests, row_index, row, conditions, cond_format):
         """Applies formatting if all conditions are met."""
         if check_conditions(row, conditions):
