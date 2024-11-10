@@ -130,17 +130,19 @@ class SheetFormatter:
             # Iterate over the data rows (skipping the header row)
             for i, row in enumerate(values[1:], 1):  # Start from the second row (data rows)
                 if formatting_type == 'case_specific':
-                    self._apply_case_specific_formatting(requests, i, row, conditions, cond_format)
+                    self._apply_case_specific_formatting(requests, i, row, conditions, cond_format, header)
                 elif formatting_type == 'all_conditions':
-                    self._apply_all_conditions_formatting(requests, i, row, conditions, cond_format)
+                    self._apply_all_conditions_formatting(requests, i, row, conditions, cond_format, header)
     
         return requests
 
-    def _apply_case_specific_formatting(self, requests, row_index, row, conditions, cond_format):
+    
+      def _apply_case_specific_formatting(self, requests, row_index, row, conditions, cond_format, header):
         """Applies case-specific formatting if conditions are met."""
         for index, condition in enumerate(conditions):
             column_name = condition.get('column')
             condition_func = condition.get('condition')
+            format_style = cond_format.get('format')[index] if isinstance(cond_format.get('format'), list) else cond_format.get('format')
     
             # Ensure the column exists
             if column_name not in header:
@@ -154,12 +156,11 @@ class SheetFormatter:
             if condition_func(cell_value):
                 print(f"Applying case-specific formatting for '{cond_format['name']}' on row {row_index + 1}: {cell_value}")
                 if cond_format.get('entire_row', False):
-                    requests.append(self._create_request(row_index, num_cols, sheet_id, cond_format.get('format'), True, 0))  # Apply to entire row
+                    requests.append(self._create_request(row_index, num_cols, sheet_id, format_style, True, 0))  # Apply to entire row
                 else:
-                    requests.append(self._create_request(row_index, num_cols, sheet_id, cond_format.get('format'), False, col_index))  # Apply to specific column
+                    requests.append(self._create_request(row_index, num_cols, sheet_id, format_style, False, col_index))  # Apply to specific column
     
-        
-    def _apply_all_conditions_formatting(self, requests, row_index, row, conditions, cond_format):
+    def _apply_all_conditions_formatting(self, requests, row_index, row, conditions, cond_format, header):
         """Applies formatting if all conditions are met."""
         all_conditions_met = True
         for condition in conditions:
@@ -187,12 +188,8 @@ class SheetFormatter:
                 requests.append(self._create_request(row_index, num_cols, sheet_id, cond_format.get('format'), True, 0))  # Apply to entire row
             else:
                 # Apply to extra columns if specified
-                for extra_col in extra_columns:
+                for extra_col in cond_format.get('extra_columns', []):
                     if extra_col in header:
                         extra_col_index = header.index(extra_col)
                         requests.append(self._create_request(row_index, num_cols, sheet_id, cond_format.get('format'), False, extra_col_index))  # Apply to extra columns
-
-    def apply_formatting(requests, row_index, format_info):
-        """Handles applying the formatting to requests."""
-        # Logic to apply formatting based on the collected format_info (not used in this example)
-        pass
+   
