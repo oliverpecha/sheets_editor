@@ -116,7 +116,10 @@ class SheetFormatter:
         for cond_format in conditional_formats:
             conditions = cond_format.get('conditions', [])
             format_name = cond_format.get('name', 'Unnamed Format')
-            formatting_type = cond_format.get('type', 'case_specific')  # Default to case_specific
+            formatting_type = cond_format.get('type', 'case_specific')
+            
+            # Default to entire_row as False if not specified
+            entire_row = cond_format.get('entire_row', False)
     
             print(f"Processing conditional format '{format_name}' of type '{formatting_type}' with conditions: {conditions}")
     
@@ -144,10 +147,11 @@ class SheetFormatter:
                         # Check if the condition is met
                         if condition_func(cell_value):
                             print(f"Applying case-specific formatting for '{format_name}' on row {i + 1}: {cell_value}")
-                            if cond_format.get('entire_row', False):
+                            if entire_row:
                                 # Apply to the entire row
                                 requests.append(self._create_request(i, num_cols, sheet_id, format_style, True, 0))  # Apply to entire row
                             else:
+                                # Only apply to the specific cell
                                 requests.append(self._create_request(i, num_cols, sheet_id, format_style, False, col_index))  # Apply to specific column
     
                 elif formatting_type == 'all_conditions':
@@ -173,8 +177,7 @@ class SheetFormatter:
                     # If all conditions are met, apply the formatting
                     if all_conditions_met:
                         print(f"Applying all-conditions formatting for '{format_name}' to row {i + 1}")
-                        requests.append(self._create_request(i, num_cols, sheet_id, cond_format.get('format'), True, 0))  # Apply to entire row
+                        requests.append(self._create_request(i, num_cols, sheet_id, cond_format.get('format'), entire_row, 0))  # Apply based on entire_row flag
     
         return requests
-
    
