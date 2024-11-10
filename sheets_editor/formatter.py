@@ -66,16 +66,6 @@ class SheetFormatter:
             }
         }
 
-
-    def _merge_format_styles(self, existing_style: Dict[str, Any], new_style: Dict[str, Any]) -> Dict[str, Any]:
-        merged_style = existing_style.copy()
-        merged_style.update(new_style)
-
-        if "textFormat" in new_style:
-            merged_style.setdefault("textFormat", {}).update(new_style["textFormat"])
-
-        return merged_style
-
     def format_worksheet(self, worksheet, formatting_config=None, conditional_formats=None):
         values = worksheet.get_all_values()
         if not values:
@@ -133,7 +123,6 @@ class SheetFormatter:
                 requests.append(self._create_request(row - 1, num_cols, sheet_id, {'textFormat': {'bold': True}}, True, 0))
 
         return requests
-
 
     def _apply_conditional_formatting(self, conditional_formats, sheet_id, values, existing_formats):
         """Applies conditional formatting based on provided conditions and merges with existing styles."""
