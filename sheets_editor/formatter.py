@@ -111,10 +111,10 @@ class SheetFormatter:
         
         for cond_format in conditional_formats:
             conditions = cond_format.get('conditions', [])
-            print(f"Processing conditional format with conditions: {conditions}")  # Debug output
+            format_name = cond_format.get('name', 'Unnamed Format')  # Get the name of the format or default to 'Unnamed Format'
+            print(f"Processing conditional format '{format_name}' with conditions: {conditions}")  # Debug output
             entire_row = cond_format.get('entire_row', False)
             format_style = cond_format.get('format')
-
     
             # Ensure conditions are provided
             if not conditions:
@@ -151,7 +151,7 @@ class SheetFormatter:
     
                 # If all conditions are met, apply the formatting
                 if all_conditions_met:
-                    print(f"Applying formatting to row {i + 1} based on conditions")
+                    print(f"Applying formatting to row {i + 1} based on conditions for '{format_name}'")
                     requests.append(self._create_request(i, num_cols, sheet_id, format_style, entire_row, 0))
     
         return requests
