@@ -6,13 +6,11 @@ class SheetFormatter:
 
     def _create_request(self, row_index: int, num_cols: int, sheet_id: int, format_style: Dict[str, Any], 
                         entire_row: bool, col_index: Optional[int] = None) -> Dict[str, Any]:
-        """Creates a formatting request."""
 
-        start_col = 0 if entire_row else col_index
-        end_col = num_cols if entire_row else col_index + 1
+        start_col = 0 if entire_row else col_index or 0
+        end_col = num_cols if entire_row else (col_index + 1 if col_index is not None else num_cols)
 
         user_entered_format = {}
-
         if format_style:
             user_entered_format.update(format_style)
 
@@ -33,22 +31,15 @@ class SheetFormatter:
         }
 
     def _merge_format_styles(self, existing_style: Dict[str, Any], new_style: Dict[str, Any]) -> Dict[str, Any]:
-        """Merges existing and new format styles, handling text formatting conflicts."""
-
         merged_style = existing_style.copy()
-        merged_style.update(new_style) #This does the initial merging of both top level dictionaries
+        merged_style.update(new_style)
 
-        #textFormat special handling
         if "textFormat" in new_style:
-          merged_style.setdefault("textFormat", {}).update(new_style["textFormat"])
+            merged_style.setdefault("textFormat", {}).update(new_style["textFormat"])
 
         return merged_style
 
-
-
     def format_worksheet(self, worksheet, formatting_config=None, conditional_formats=None):
-        """Applies formatting and handles merging."""
-
         values = worksheet.get_all_values()
         if not values:
             return
@@ -66,16 +57,12 @@ class SheetFormatter:
                     existing_formats[row_index] = req["repeatCell"]["cell"]["userEnteredFormat"]
 
         if conditional_formats:
-            requests.extend(self._apply_conditional_formatting(
-                conditional_formats, 
-                worksheet._properties['sheetId'], 
-                values, 
-                existing_formats
-            ))
+            requests.extend(self._apply_conditional_formatting(conditional_formats, worksheet._properties['sheetId'], values, existing_formats))
 
         if requests:
             worksheet.spreadsheet.batch_update({"requests": requests})
 
+    
     def _apply_absolute_formatting(self, formatting_config, sheet_id, num_rows, num_cols, values):
         requests = []
         if formatting_config.get('alternate_rows'):
