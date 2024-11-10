@@ -129,13 +129,13 @@ class SheetFormatter:
             # Iterate over the data rows (skipping the header row)
             for i, row in enumerate(values[1:], 1):  # Start from the second row (data rows)
                 if formatting_type == 'case_specific':
-                    self._apply_case_specific_formatting(requests, i, row, conditions, cond_format, header)
+                    self._apply_case_specific_formatting(requests, i, row, conditions, cond_format, header, num_cols)
                 elif formatting_type == 'all_conditions':
                     self._apply_all_conditions_formatting(requests, i, row, conditions, cond_format, header)
     
         return requests
-
-    def _apply_case_specific_formatting(self, requests, row_index, row, conditions, cond_format, header):
+    
+    def _apply_case_specific_formatting(self, requests, row_index, row, conditions, cond_format, header, num_cols):
         """Applies case-specific formatting if conditions are met."""
         for index, condition in enumerate(conditions):
             column_name = condition.get('column')
@@ -183,10 +183,10 @@ class SheetFormatter:
         if all_conditions_met:
             print(f"Applying all-conditions formatting for '{cond_format['name']}' to row {row_index + 1}")
             if cond_format.get('entire_row', False):
-                requests.append(self._create_request(row_index, num_cols, sheet_id, cond_format.get('format'), True, 0))  # Apply to entire row
+                requests.append(self._create_request(row_index, len(header), sheet_id, cond_format.get('format'), True, 0))  # Apply to entire row
             else:
                 # Apply to extra columns if specified
                 for extra_col in cond_format.get('extra_columns', []):
                     if extra_col in header:
                         extra_col_index = header.index(extra_col)
-                        requests.append(self._create_request(row_index, num_cols, sheet_id, cond_format.get('format'), False, extra_col_index))  # Apply to extra columns
+                        requests.append(self._create_request(row_index, len(header), sheet_id, cond_format.get('format'), False, extra_col_index))  # Apply to extra columns
