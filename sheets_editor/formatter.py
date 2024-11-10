@@ -106,7 +106,7 @@ class SheetFormatter:
         """Applies conditional formatting based on the provided conditions."""
         requests = []
         header = values[0]  # Assuming the first row contains headers (column names)
-    
+        print("conditional_formats: " + conditional_formats)
         for cond_format in conditional_formats:
             conditions = cond_format.get('conditions', [])
             entire_row = cond_format.get('entire_row', False)
