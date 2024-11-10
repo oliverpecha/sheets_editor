@@ -3,6 +3,24 @@ from typing import Any, Dict, List, Optional, Union
 class SheetFormatter:
     def __init__(self):
         pass
+
+    def _process_color(self, color_dict):
+        """Processes a color dictionary, converting values to floats."""
+        if not color_dict:
+            return None
+        return {k: float(v) for k, v in color_dict.items()}
+
+    def _merge_format_styles(self, existing_style, new_style):
+        """Merges styles, handling backgroundColor correctly."""
+        merged_style = existing_style.copy()
+        for key, value in new_style.items():
+            if key == "backgroundColor":
+                merged_style["backgroundColor"] = self._process_color(value) # Correctly handle backgroundColor
+            elif key == "textFormat":
+                 merged_style.setdefault("textFormat", {}).update(value) # Merge textFormat dictionaries
+            else:
+                merged_style[key] = value  # For other styles
+        return merged_style
         
     def _process_color(self, color_dict):
         """Processes a color dictionary to ensure values are floats and handles potential missing components."""
@@ -172,7 +190,9 @@ class SheetFormatter:
 
                 if format_style:
                     merged_style = self._merge_format_styles(existing_formats.get(i, {}), format_style)
-                    requests.append(self._create_request(i, num_cols, sheet_id, merged_style, entire_row, col_index))
+                    if merged_style:
+                        requests.append(self._create_request(i, num_cols, sheet_id, merged_style, entire_row, col_index))
+
         return requests
 
     def _check_condition(self, condition, row, header):
