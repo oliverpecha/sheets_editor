@@ -14,6 +14,15 @@ class SheetFormatter:
         if format_style:
             user_entered_format.update(format_style)
 
+        fields = []
+        for key, value in user_entered_format.items():
+            if isinstance(value, dict):
+                for sub_key in value:
+                    fields.append(f"{key}.{sub_key}")
+            else:
+                fields.append(key)
+        fields_str = ",".join(fields)
+
         return {
             "repeatCell": {
                 "range": {
@@ -26,9 +35,10 @@ class SheetFormatter:
                 "cell": {
                     "userEnteredFormat": user_entered_format
                 },
-                "fields": ",".join(user_entered_format.keys()) if user_entered_format else ""
+                "fields": fields_str
             }
         }
+
 
     def _merge_format_styles(self, existing_style: Dict[str, Any], new_style: Dict[str, Any]) -> Dict[str, Any]:
         merged_style = existing_style.copy()
@@ -63,8 +73,9 @@ class SheetFormatter:
             worksheet.spreadsheet.batch_update({"requests": requests})
 
     
-    def _apply_absolute_formatting(self, formatting_config, sheet_id, num_rows, num_cols, values):
+  def _apply_absolute_formatting(self, formatting_config, sheet_id, num_rows, num_cols, values):
         requests = []
+
         if formatting_config.get('alternate_rows'):
             for row in range(2, num_rows + 1, 2):
                 if formatting_config.get('row_height'):
@@ -83,13 +94,16 @@ class SheetFormatter:
                         }
                     })
                 if formatting_config.get('background_color'):
-                    requests.append(self._create_request(row - 1, num_cols, sheet_id, formatting_config['background_color'], True, 0))
+                    bg_color = formatting_config['background_color']
+                    for color_comp in ["red", "green", "blue"]:  # Or "alpha" if needed
+                        bg_color[color_comp] = float(bg_color.get(color_comp, 0.0))  # Convert and default to 0.0
+                    requests.append(self._create_request(row - 1, num_cols, sheet_id, {'backgroundColor': bg_color}, True, 0))
 
         if 'bold_rows' in formatting_config:
             for row in formatting_config['bold_rows']:
                 requests.append(self._create_request(row - 1, num_cols, sheet_id, {'textFormat': {'bold': True}}, True, 0))
-        return requests
 
+        return requests
 
 
     def _apply_conditional_formatting(self, conditional_formats, sheet_id, values, existing_formats):
