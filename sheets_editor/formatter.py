@@ -105,6 +105,7 @@ class SheetFormatter:
 
 
         
+ 
     def _apply_conditional_formatting(self, conditional_formats, sheet_id, values):
         """Main method to apply conditional formatting based on the provided conditions."""
         requests = []
@@ -135,7 +136,7 @@ class SheetFormatter:
     
         return requests
     
-    def _apply_case_specific_formatting(self, requests, row_index, row, conditions, cond_format, header, num_cols):
+    def _apply_case_specific_formatting(self, requests, row_index, row, conditions, cond_format, header):
         """Applies case-specific formatting if conditions are met."""
         for index, condition in enumerate(conditions):
             column_name = condition.get('column')
