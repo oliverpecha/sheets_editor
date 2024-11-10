@@ -108,13 +108,12 @@ class SheetFormatter:
         """Applies conditional formatting based on the provided conditions."""
         requests = []
         header = values[0]  # Assuming the first row contains headers (column names)
-        
-        print(f"Header columns: {header}")  # Debug output to see header columns
     
         for cond_format in conditional_formats:
             conditions = cond_format.get('conditions', [])
             format_name = cond_format.get('name', 'Unnamed Format')
-            formatting_type = cond_format.get('type', 'case_specific')  # Default to case_specific
+            formatting_type = cond_format.get('type', 'case_specific')
+    
             print(f"Processing conditional format '{format_name}' of type '{formatting_type}' with conditions: {conditions}")
     
             if not conditions:
@@ -123,33 +122,8 @@ class SheetFormatter:
     
             # Iterate over the data rows (skipping the header row)
             for i, row in enumerate(values[1:], 1):  # Start from the second row (data rows)
-                # Reset all_conditions_met for all-conditions formatting
-                all_conditions_met = True
-                
-                if formatting_type == 'case_specific':
-                    for index, condition in enumerate(conditions):
-                        column_name = condition.get('column')
-                        condition_func = condition.get('condition')
-                        format_style = cond_format.get('format')[index]  # Get format for the current condition
-    
-                        # Ensure the column exists
-                        if column_name not in header:
-                            print(f"Column '{column_name}' not found in the header.")
-                            all_conditions_met = False
-                            continue  # Skip to the next condition
-    
-                        col_index = header.index(column_name)  # Find the column index
-                        cell_value = row[col_index]  # Get the cell's value
-    
-                        if condition_func(cell_value):
-                            print(f"Applying case-specific formatting for '{format_name}' on row {i + 1}: {cell_value}")
-                            if cond_format.get('entire_row', False):
-                                # Apply to the entire row
-                                requests.append(self._create_request(i, num_cols, sheet_id, format_style, True, 0))  # Apply to entire row
-                            else:
-                                requests.append(self._create_request(i, num_cols, sheet_id, format_style, False, col_index))  # Apply to specific column
-                            
-                elif formatting_type == 'all_conditions':
+                if formatting_type == 'all_conditions':
+                    all_conditions_met = True
                     for condition in conditions:
                         column_name = condition.get('column')
                         condition_func = condition.get('condition')
@@ -158,7 +132,7 @@ class SheetFormatter:
                         if column_name not in header:
                             print(f"Column '{column_name}' not found in the header.")
                             all_conditions_met = False
-                            break  # Exit the loop since one condition is already not met
+                            break
     
                         col_index = header.index(column_name)  # Find the column index
                         cell_value = row[col_index]  # Get the cell's value
@@ -169,7 +143,8 @@ class SheetFormatter:
     
                     if all_conditions_met:
                         print(f"Applying all-conditions formatting for '{format_name}' to row {i + 1}")
-                        requests.append(self._create_request(i, num_cols, sheet_id, cond_format.get('format'), True, 0))
+                        # Apply the entire row formatting
+                        requests.append(self._create_request(i, num_cols, sheet_id, cond_format.get('format'), True, 0))  # Apply to entire row
     
         return requests
 
