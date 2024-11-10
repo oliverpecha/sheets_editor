@@ -108,6 +108,8 @@ class SheetFormatter:
         """Applies conditional formatting based on the provided conditions."""
         requests = []
         header = values[0]  # Assuming the first row contains headers (column names)
+        
+        print(f"Header columns: {header}")  # Debug output to see header columns
     
         for cond_format in conditional_formats:
             conditions = cond_format.get('conditions', [])
@@ -121,15 +123,20 @@ class SheetFormatter:
     
             # Iterate over the data rows (skipping the header row)
             for i, row in enumerate(values[1:], 1):  # Start from the second row (data rows)
+                # Reset all_conditions_met for all-conditions formatting
+                all_conditions_met = True
+                
                 if formatting_type == 'case_specific':
                     for index, condition in enumerate(conditions):
                         column_name = condition.get('column')
                         condition_func = condition.get('condition')
                         format_style = cond_format.get('format')[index]  # Get format for the current condition
     
+                        # Ensure the column exists
                         if column_name not in header:
                             print(f"Column '{column_name}' not found in the header.")
-                            continue
+                            all_conditions_met = False
+                            continue  # Skip to the next condition
     
                         col_index = header.index(column_name)  # Find the column index
                         cell_value = row[col_index]  # Get the cell's value
@@ -139,15 +146,15 @@ class SheetFormatter:
                             requests.append(self._create_request(i, num_cols, sheet_id, format_style, False, col_index))
     
                 elif formatting_type == 'all_conditions':
-                    all_conditions_met = True
                     for condition in conditions:
                         column_name = condition.get('column')
                         condition_func = condition.get('condition')
     
+                        # Ensure the column exists
                         if column_name not in header:
                             print(f"Column '{column_name}' not found in the header.")
                             all_conditions_met = False
-                            break
+                            break  # Exit the loop since one condition is already not met
     
                         col_index = header.index(column_name)  # Find the column index
                         cell_value = row[col_index]  # Get the cell's value
