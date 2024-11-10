@@ -72,8 +72,7 @@ class SheetFormatter:
         if requests:
             worksheet.spreadsheet.batch_update({"requests": requests})
 
-    
-  def _apply_absolute_formatting(self, formatting_config, sheet_id, num_rows, num_cols, values):
+    def _apply_absolute_formatting(self, formatting_config, sheet_id, num_rows, num_cols, values):
         requests = []
 
         if formatting_config.get('alternate_rows'):
