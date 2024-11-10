@@ -104,7 +104,7 @@ class SheetFormatter:
         return requests
 
 
-    def _apply_conditional_formatting(self, conditional_formats, sheet_id, num_cols, values):
+     def _apply_conditional_formatting(self, conditional_formats, sheet_id, num_cols, values):
         """Applies conditional formatting based on the provided conditions."""
         requests = []
         header = values[0]  # Assuming the first row contains headers (column names)
@@ -112,42 +112,30 @@ class SheetFormatter:
         for cond_format in conditional_formats:
             conditions = cond_format.get('conditions', [])
             entire_row = cond_format.get('entire_row', False)
-            
+            format_style = cond_format.get('format', {})
+            secondary_format = cond_format.get('secondary_format', {})
+    
+            # Iterate through the data rows (starting from the second row)
             for i, row in enumerate(values[1:], 1):  # Start from the second row (data rows)
-                all_conditions_met = True
-                
                 for condition in conditions:
                     column_name = condition.get('column')
                     condition_func = condition.get('condition')
     
                     if column_name not in header:
                         print(f"Column '{column_name}' not found in the header.")
-                        all_conditions_met = False
-                        break
+                        continue  # Skip if column is not found
     
                     col_index = header.index(column_name)
                     cell_value = row[col_index]
     
-                    if not condition_func(cell_value):
-                        all_conditions_met = False
-                        break
-    
-                # If all conditions are met, apply the corresponding format
-                if all_conditions_met:
-                    format_style = cond_format.get('format')
-                    # Apply the formatting logic based on gender
-                    if row[header.index('gender')] == 'Woman':
-                        format_style = {
-                            'backgroundColor': {'red': 1.0, 'green': 0.7, 'blue': 0.7},  # Pink for Women
-                            'textFormat': {'bold': False}
-                        }
-                    elif row[header.index('gender')] == 'Man':
-                        format_style = {
-                            'backgroundColor': {'red': 0.7, 'green': 0.7, 'blue': 1.0},  # Blue for Men
-                            'textFormat': {'bold': False}
-                        }
-                    
-                    requests.append(self._create_request(i, num_cols, sheet_id, format_style, entire_row, 0))
+                    # Evaluate the condition
+                    if condition_func(cell_value):
+                        # Apply the primary formatting for 'Woman'
+                        if cell_value == 'Woman':
+                            requests.append(self._create_request(i, num_cols, sheet_id, format_style, entire_row, col_index))
+                        # Apply the secondary formatting for 'Man'
+                        elif cell_value == 'Man':
+                            requests.append(self._create_request(i, num_cols, sheet_id, secondary_format, entire_row, col_index))
     
         return requests
 
