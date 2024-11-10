@@ -111,7 +111,6 @@ class SheetFormatter:
             conditions = cond_format.get('conditions', [])
             entire_row = cond_format.get('entire_row', False)
             format_style = cond_format.get('format')
-            print("conditions: " + conditions)
 
     
             # Ensure conditions are provided
