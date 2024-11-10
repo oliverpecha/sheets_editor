@@ -3,6 +3,15 @@ from typing import Any, Dict, List, Optional, Union
 class SheetFormatter:
     def __init__(self):
         pass
+        
+    def _process_color(self, color_dict):
+        """Processes a color dictionary to ensure values are floats and handles potential missing components."""
+        if not color_dict: # Handle the case where there's no color information provided
+            return None 
+        processed_color = {}
+        for component in ["red", "green", "blue", "alpha"]:
+            processed_color[component] = float(color_dict.get(component, 0.0))  # Get component or default to 0.0, convert to float
+        return processed_color
 
     def _create_request(self, row_index: int, num_cols: int, sheet_id: int, format_style: Dict[str, Any], 
                         entire_row: bool, col_index: Optional[int] = None) -> Dict[str, Any]:
@@ -74,9 +83,9 @@ class SheetFormatter:
 
     def _apply_absolute_formatting(self, formatting_config, sheet_id, num_rows, num_cols, values):
         requests = []
-
         if formatting_config.get('alternate_rows'):
             for row in range(2, num_rows + 1, 2):
+                row_format = {}  # Start with an empty dictionary for the row's formatting
                 if formatting_config.get('row_height'):
                     requests.append({
                         "updateDimensionProperties": {
@@ -92,12 +101,15 @@ class SheetFormatter:
                             "fields": "pixelSize"
                         }
                     })
-                if formatting_config.get('background_color'):
-                    bg_color = formatting_config['background_color']
-                    for color_comp in ["red", "green", "blue"]:  # Or "alpha" if needed
-                        bg_color[color_comp] = float(bg_color.get(color_comp, 0.0))  # Convert and default to 0.0
-                    requests.append(self._create_request(row - 1, num_cols, sheet_id, {'backgroundColor': bg_color}, True, 0))
 
+                if formatting_config.get('background_color'):
+                    bg_color = self._process_color(formatting_config['background_color']) #Corrected color processing
+                    if bg_color: # Add only if there is color information
+                        row_format['backgroundColor'] = bg_color
+
+                if row_format: #Append request only if a style is present
+                    requests.append(self._create_request(row - 1, num_cols, sheet_id, row_format, True, 0))
+  
         if 'bold_rows' in formatting_config:
             for row in formatting_config['bold_rows']:
                 requests.append(self._create_request(row - 1, num_cols, sheet_id, {'textFormat': {'bold': True}}, True, 0))
