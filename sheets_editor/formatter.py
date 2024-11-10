@@ -143,8 +143,12 @@ class SheetFormatter:
     
                         if condition_func(cell_value):
                             print(f"Applying case-specific formatting for '{format_name}' on row {i + 1}: {cell_value}")
-                            requests.append(self._create_request(i, num_cols, sheet_id, format_style, False, col_index))
-    
+                            if cond_format.get('entire_row', False):
+                                # Apply to the entire row
+                                requests.append(self._create_request(i, num_cols, sheet_id, format_style, True, 0))  # Apply to entire row
+                            else:
+                                requests.append(self._create_request(i, num_cols, sheet_id, format_style, False, col_index))  # Apply to specific column
+                            
                 elif formatting_type == 'all_conditions':
                     for condition in conditions:
                         column_name = condition.get('column')
