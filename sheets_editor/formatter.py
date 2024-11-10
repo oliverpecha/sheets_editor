@@ -104,7 +104,7 @@ class SheetFormatter:
         return requests
 
 
-     def _apply_conditional_formatting(self, conditional_formats, sheet_id, num_cols, values):
+    def _apply_conditional_formatting(self, conditional_formats, sheet_id, num_cols, values):
         """Applies conditional formatting based on the provided conditions."""
         requests = []
         header = values[0]  # Assuming the first row contains headers (column names)
