@@ -157,25 +157,25 @@ class SheetFormatter:
 
             for i, row in enumerate(values[1:], 1):
                 try:
-                # Use batch_get_by_data_filter to retrieve row formats
-                requests_data = {
-                    "data_filters": [
-                        {
-                            "gridRange": {
-                                "sheetId": worksheet.id,
-                                "startRowIndex": i,
-                                "endRowIndex": i + 1,  # i+1
+                    # Use batch_get_by_data_filter to retrieve row formats
+                    requests_data = {
+                        "data_filters": [
+                            {
+                                "gridRange": {
+                                    "sheetId": worksheet.id,
+                                    "startRowIndex": i,
+                                    "endRowIndex": i + 1,  # i+1
+                                }
                             }
-                        }
-                    ]
-                }
-                existing_row_formats = spreadsheet.batch_get_by_data_filter(requests_data)
-
-                if existing_row_formats and existing_row_formats['valueRanges'] and existing_row_formats['valueRanges'][0].get('rowData'):
-                    first_cell_format = existing_row_formats['valueRanges'][0]['rowData'][0][0].get("userEnteredFormat", {}) if existing_row_formats['valueRanges'][0]['rowData'][0] else {}
-                    existing_format = first_cell_format.copy() if first_cell_format else {}
-                else:
-                    existing_format = {}
+                        ]
+                    }
+                    existing_row_formats = spreadsheet.batch_get_by_data_filter(requests_data)
+    
+                    if existing_row_formats and existing_row_formats['valueRanges'] and existing_row_formats['valueRanges'][0].get('rowData'):
+                        first_cell_format = existing_row_formats['valueRanges'][0]['rowData'][0][0].get("userEnteredFormat", {}) if existing_row_formats['valueRanges'][0]['rowData'][0] else {}
+                        existing_format = first_cell_format.copy() if first_cell_format else {}
+                    else:
+                        existing_format = {}
 
                 except Exception as e:
                     print(f"Error getting row formats: {str(e)}")  # Print the actual exception
