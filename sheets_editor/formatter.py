@@ -91,7 +91,7 @@ class SheetFormatter:
                 requests.append(self._create_request(row - 1, num_cols, sheet_id, {'textFormat': {'bold': True}}, True, 0))  # col_index=0 for entire row
         return requests
 
-   def _apply_conditional_formatting(self, conditional_formats, sheet_id, values, worksheet):
+    def _apply_conditional_formatting(self, conditional_formats, sheet_id, values, worksheet):
         """Main method to apply conditional formatting based on the provided conditions."""
         requests = []
         header = values[0]  # Assuming the first row contains headers (column names)
