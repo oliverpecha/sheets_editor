@@ -58,7 +58,8 @@ class SheetFormatter:
                 requests.extend(self._apply_absolute_formatting(formatting_config, worksheet._properties['sheetId'], len(values), num_cols, values))
 
             if conditional_formats:
-                requests.extend(self._apply_conditional_formatting(conditional_formats, worksheet._properties['sheetId'], values, worksheet))
+                spreadsheet = worksheet.spreadsheet  # Get the spreadsheet object
+                requests.extend(self._apply_conditional_formatting(conditional_formats, worksheet._properties['sheetId'], values, worksheet, spreadsheet)) # Pass spreadsheet
 
             if requests:
                 print(json.dumps(requests, indent=4))  # Print the requests for debugging
@@ -107,8 +108,9 @@ class SheetFormatter:
                 requests.append(self._create_request(row - 1, num_cols, sheet_id, {'textFormat': {'bold': True}}, True, 0))  # col_index=0 for entire row
         return requests
 
-    def _apply_conditional_formatting(self, conditional_formats, sheet_id, values, worksheet):
-        """Applies conditional formatting, with added type checking for colors."""
+
+    def _apply_conditional_formatting(self, conditional_formats, sheet_id, values, worksheet, spreadsheet):  # Add spreadsheet as argument
+        """Applies conditional formatting, now with access to the spreadsheet object."""
         requests = []
         header = values[0]
         num_cols = len(header)
