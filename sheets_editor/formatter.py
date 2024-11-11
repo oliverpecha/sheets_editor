@@ -6,6 +6,12 @@ class SheetFormatter:
 
 
 
+    def _process_color(self, color_dict):
+        """Processes a color dictionary, converting values to floats."""
+        if not color_dict:
+            return None
+        return {k: float(v) for k, v in color_dict.items()}
+
     def _merge_format_styles(self, existing_style, new_style):
         """Merges styles, handling backgroundColor correctly."""
         merged_style = existing_style.copy()
@@ -17,15 +23,30 @@ class SheetFormatter:
             else:
                 merged_style[key] = value  # For other styles
         return merged_style
-        
-    def _process_color(self, color_dict):
-        """Processes a color dictionary to ensure values are floats and handles potential missing components."""
-        if not color_dict: # Handle the case where there's no color information provided
-            return None 
-        processed_color = {}
-        for component in ["red", "green", "blue", "alpha"]:
-            processed_color[component] = float(color_dict.get(component, 0.0))  # Get component or default to 0.0, convert to float
-        return processed_color
+
+    def apply_formatting(self, worksheet, cell_range, new_format):
+        """Applies formatting to a given cell range, merging with existing formats."""
+        requests = []
+        for cell in cell_range:
+            existing_format = worksheet.cell(cell.row, cell.col).format  # Retrieve existing format
+            merged_format = self._merge_format_styles(existing_format, new_format)
+            requests.append({
+                'updateCells': {
+                    'range': {
+                        'sheetId': worksheet.id,
+                        'startRowIndex': cell.row - 1,
+                        'endRowIndex': cell.row,
+                        'startColumnIndex': cell.col - 1,
+                        'endColumnIndex': cell.col
+                    },
+                    'cell': {
+                        'userEnteredFormat': merged_format
+                    },
+                    'fields': 'userEnteredFormat'
+                }
+            })
+        worksheet.batch_update({'requests': requests})
+
 
     def _create_request(self, row_index: int, num_cols: int, sheet_id: int, format_style: Dict[str, Any], 
                         entire_row: bool, col_index: Optional[int] = None) -> Dict[str, Any]:
