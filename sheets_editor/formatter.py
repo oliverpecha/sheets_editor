@@ -1,5 +1,6 @@
 from typing import Any, Dict, List
-#temp
+import json
+
 class SheetFormatter:
     def __init__(self):
         pass  # Needed if no instance attributes
@@ -155,16 +156,15 @@ class SheetFormatter:
             for i, row in enumerate(values[1:], 1):
                 try:
                     existing_row_formats = worksheet.get_row_formats(i + 1)
-        
-                    if existing_row_formats:
-                        first_cell_format = existing_row_formats[0].get("userEnteredFormat") # Access userEnteredFormat directly
-                        existing_format = first_cell_format.copy() if first_cell_format else None
+                    if existing_row_formats and existing_row_formats[0]:  #Check if list and first element exist. Added check
+                        first_cell_format = existing_row_formats[0].get("userEnteredFormat")
+                        existing_format = first_cell_format.copy() if first_cell_format else {} # Use empty dict if no format
                     else:
-                        existing_format = None
-        
-                except Exception as e: #Handle exceptions during format retrieval
+                        existing_format = {}  # Initialize as empty dictionary
+                except Exception as e:
                     print(f"Error getting row formats: {e}")
-                    existing_format = None # Default to no existing format if there's an error
+                    existing_format = {} #Use empty dictionary if there are errors
+
 
                 
                 if formatting_type == 'case_specific':
