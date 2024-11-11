@@ -153,13 +153,19 @@ class SheetFormatter:
                                         print(f"Warning: Could not convert {color_key} value to float: {color_value}")
 
             for i, row in enumerate(values[1:], 1):
-                existing_row_formats = worksheet.row_values_format(i + 1)
+                try:
+                    existing_row_formats = worksheet.get_row_formats(i + 1)
+        
+                    if existing_row_formats:
+                        first_cell_format = existing_row_formats[0].get("userEnteredFormat") # Access userEnteredFormat directly
+                        existing_format = first_cell_format.copy() if first_cell_format else None
+                    else:
+                        existing_format = None
+        
+                except Exception as e: #Handle exceptions during format retrieval
+                    print(f"Error getting row formats: {e}")
+                    existing_format = None # Default to no existing format if there's an error
 
-                if existing_row_formats:
-                    first_cell_format = existing_row_formats[0][0]
-                    existing_format = first_cell_format.copy() if first_cell_format else None
-                else:
-                    existing_format = None
                 
                 if formatting_type == 'case_specific':
                     self._apply_case_specific_formatting(requests, i, row, conditions, cond_format, header, sheet_id, existing_format)
