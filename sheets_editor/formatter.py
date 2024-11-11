@@ -129,10 +129,28 @@ class SheetFormatter:
 
             # Check and convert color data types before creating requests:
             if isinstance(format_style, dict) and 'backgroundColor' in format_style:
-                # ... (color type checking and conversion code remains the same)
+                for color_key in ('red', 'green', 'blue'):
+                    if color_key in format_style['backgroundColor']:
+                        color_value = format_style['backgroundColor'][color_key]
+                        print(f"Value type for {color_key}: {type(color_value)}")
+                        if not isinstance(color_value, (int, float)):
+                            try:
+                                format_style['backgroundColor'][color_key] = float(color_value)
+                            except (ValueError, TypeError):
+                                print(f"Warning: Could not convert {color_key} value to float: {color_value}")
 
             if isinstance(format_style, list):  # Handle list of formats for case-specific
-                # ... (color type checking and conversion code remains the same)
+                for fmt in format_style:
+                    if isinstance(fmt, dict) and 'backgroundColor' in fmt:
+                        for color_key in ('red', 'green', 'blue'):
+                            if color_key in fmt['backgroundColor']:
+                                color_value = fmt['backgroundColor'][color_key]
+                                print(f"Value type for {color_key}: {type(color_value)}")
+                                if not isinstance(color_value, (int, float)):
+                                    try:
+                                        fmt['backgroundColor'][color_key] = float(color_value)
+                                    except (ValueError, TypeError):
+                                        print(f"Warning: Could not convert {color_key} value to float: {color_value}")
 
             for i, row in enumerate(values[1:], 1):
                 existing_row_formats = worksheet.row_values_format(i + 1)
