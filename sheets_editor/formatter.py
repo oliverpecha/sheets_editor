@@ -127,7 +127,7 @@ class SheetFormatter:
     
         return requests
     
-     def _apply_case_specific_formatting(self, requests, row_index, row, conditions, cond_format, header, sheet_id):
+    def _apply_case_specific_formatting(self, requests, row_index, row, conditions, cond_format, header, sheet_id):
         """Applies case-specific formatting if conditions are met."""
         for index, condition in enumerate(conditions):
             column_name = condition.get('column')
@@ -152,7 +152,7 @@ class SheetFormatter:
                 else:
                     requests.append(self._create_request(row_index, num_cols, sheet_id, merged_format, False, col_index))  # Apply to specific column
                     
-     def _apply_all_conditions_formatting(self, requests, row_index, row, conditions, cond_format, header, sheet_id):
+    def _apply_all_conditions_formatting(self, requests, row_index, row, conditions, cond_format, header, sheet_id):
         """Applies formatting if all conditions are met."""
         all_conditions_met = True
         for condition in conditions:
@@ -199,7 +199,7 @@ class SheetFormatter:
         except Exception as e:
             print(f"Error retrieving existing format: {e}")
             return {}
-
+    
     def _merge_formats(self, new_format, existing_format, default_format={}):
         """
         Merges new format with existing format. If a format is not specified in the new format,
