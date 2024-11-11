@@ -5,17 +5,21 @@ class SheetFormatter:
         pass  # Needed if no instance attributes
 
     def _create_request(self, row_index, num_cols, sheet_id, format_style, entire_row, col_index, existing_format=None):
-        """
-        Creates a formatting request for a specific cell or the entire row, merging with existing format.
-        """
+        """Creates a formatting request, correctly handling colors."""
         start_col = 0 if entire_row else col_index
         end_col = num_cols if entire_row else col_index + 1
-
-        user_entered_format = existing_format.copy() if existing_format else {}  # Start with existing format or empty
-
+    
+        user_entered_format = existing_format.copy() if existing_format else {}
+    
         if isinstance(format_style, dict):
-            user_entered_format.update(format_style)  # Merge new format with existing
-
+            # Correctly format colors:
+            if all(k in format_style for k in ("red", "green", "blue")):
+                color = format_style.copy()  # Don't modify the original format_style
+                user_entered_format['backgroundColor'] = {'red': color.pop('red', 0), 'green': color.pop('green', 0), 'blue': color.pop('blue', 0), 'alpha': color.pop('alpha', 1)} #added alpha
+                user_entered_format.update(color) #add remaining style key-values
+            else:
+                user_entered_format.update(format_style)
+    
         return {
             "repeatCell": {
                 "range": {
