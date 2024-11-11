@@ -155,17 +155,16 @@ class SheetFormatter:
 
             for i, row in enumerate(values[1:], 1):
                 try:
-                    existing_row_formats = worksheet.get_row_formats(i + 1)
-                    if existing_row_formats and existing_row_formats[0]:  #Check if list and first element exist. Added check
+                    existing_row_formats = spreadsheet.get_row_formats(worksheet.id, i + 1)  # Use spreadsheet object here
+    
+                    if existing_row_formats and existing_row_formats[0]:
                         first_cell_format = existing_row_formats[0].get("userEnteredFormat")
-                        existing_format = first_cell_format.copy() if first_cell_format else {} # Use empty dict if no format
+                        existing_format = first_cell_format.copy() if first_cell_format else {}
                     else:
-                        existing_format = {}  # Initialize as empty dictionary
+                        existing_format = {}
                 except Exception as e:
                     print(f"Error getting row formats: {e}")
                     existing_format = {} #Use empty dictionary if there are errors
-
-
                 
                 if formatting_type == 'case_specific':
                     self._apply_case_specific_formatting(requests, i, row, conditions, cond_format, header, sheet_id, existing_format)
