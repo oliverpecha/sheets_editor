@@ -4,11 +4,7 @@ class SheetFormatter:
     def __init__(self):
         pass
 
-    def _process_color(self, color_dict):
-        """Processes a color dictionary, converting values to floats."""
-        if not color_dict:
-            return None
-        return {k: float(v) for k, v in color_dict.items()}
+
 
     def _merge_format_styles(self, existing_style, new_style):
         """Merges styles, handling backgroundColor correctly."""
