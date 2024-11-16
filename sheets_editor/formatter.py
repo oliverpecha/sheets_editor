@@ -34,27 +34,34 @@ class SheetFormatter:
         """Apply absolute and conditional formatting to the worksheet."""
         if not formatting_config and not conditional_formats:
             return
-
+    
+        # Get all values to determine the number of rows and columns
         values = worksheet.get_all_values()
         if not values:
             return
-
+    
         num_rows = len(values)
-        num_cols = len(values[0])
-
-        # Initialize the formatting cache
-        self._initialize_cache(num_rows, num_cols)
-
+        num_cols = len(values[0]) if values else 0
+        sheet_id = worksheet._properties['sheetId']  # Get the sheet ID
+    
+        # Initialize the batch requests list
+        requests = []
+    
         # Apply absolute formatting
         if formatting_config:
-            self._apply_absolute_formatting(formatting_config, num_rows, num_cols)
-
+            requests.extend(self._apply_absolute_formatting(formatting_config, sheet_id, num_rows, num_cols))
+    
         # Apply conditional formatting
         if conditional_formats:
-            self._apply_conditional_formatting(conditional_formats, values)
-
-        # Generate batch requests from the cache and update the worksheet
-        self._update_worksheet_from_cache(worksheet)
+            requests.extend(self._apply_conditional_formatting(conditional_formats, sheet_id, values))
+    
+        # Send batch update to Google Sheets API
+        if requests:
+            try:
+                worksheet.spreadsheet.batch_update({"requests": requests})
+            except Exception as e:
+                print(f"Error applying formatting: {e}")
+                raise
 
     def _apply_absolute_formatting(self, formatting_config, sheet_id, num_rows, num_cols):
         """Apply absolute formatting (e.g., alternate rows, bold rows)."""
