@@ -164,9 +164,8 @@ class SheetFormatter:
     def format_worksheet(self, worksheet, formatting_config=None, conditional_formats=None):
         """Apply absolute and conditional formatting to the worksheet."""
         if not formatting_config and not conditional_formats:
-        return
-        
-        
+            return
+    
         # Get all values to determine the number of rows and columns
         values = worksheet.get_all_values()
         if not values:
