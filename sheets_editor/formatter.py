@@ -168,32 +168,32 @@ class SheetFormatter:
         
         
         # Get all values to determine the number of rows and columns
-            values = worksheet.get_all_values()
-            if not values:
-                return
-        
-            num_rows = len(values)
-            num_cols = len(values[0]) if values else 0
-            sheet_id = worksheet._properties['sheetId']  # Get the sheet ID
-        
-            # Initialize cache for the entire sheet
-            self._initialize_cache(num_rows, num_cols)
-        
-            # Apply absolute formatting
-            if formatting_config:
-                self._apply_absolute_formatting(formatting_config, sheet_id, num_rows, num_cols)
-        
-            # Apply conditional formatting
-            if conditional_formats:
-                self._apply_conditional_formatting(conditional_formats, sheet_id, values)
-        
-            # Generate batch requests from the cache
-            requests = self._generate_requests_from_cache(sheet_id, num_cols)
-        
-            # Send batch update to Google Sheets API
-            if requests:
-                try:
-                    worksheet.spreadsheet.batch_update({"requests": requests})
-                except Exception as e:
-                    print(f"Error applying formatting: {e}")
-                    raise
+        values = worksheet.get_all_values()
+        if not values:
+            return
+    
+        num_rows = len(values)
+        num_cols = len(values[0]) if values else 0
+        sheet_id = worksheet._properties['sheetId']  # Get the sheet ID
+    
+        # Initialize cache for the entire sheet
+        self._initialize_cache(num_rows, num_cols)
+    
+        # Apply absolute formatting
+        if formatting_config:
+            self._apply_absolute_formatting(formatting_config, sheet_id, num_rows, num_cols)
+    
+        # Apply conditional formatting
+        if conditional_formats:
+            self._apply_conditional_formatting(conditional_formats, sheet_id, values)
+    
+        # Generate batch requests from the cache
+        requests = self._generate_requests_from_cache(sheet_id, num_cols)
+    
+        # Send batch update to Google Sheets API
+        if requests:
+            try:
+                worksheet.spreadsheet.batch_update({"requests": requests})
+            except Exception as e:
+                print(f"Error applying formatting: {e}")
+                raise
