@@ -69,32 +69,30 @@ class SheetFormatter:
         if formatting_config.get('alternate_rows'):
             # Apply to every other row (even rows, 1-based indexing)
             for row in range(1, num_rows, 2):  # Skip every other row
-                for col in range(num_cols):
-                    requests.append(
-                        self._create_request(
-                            row_index=row - 1,  # Convert to 0-based indexing
-                            num_cols=num_cols,
-                            sheet_id=sheet_id,
-                            format_style=formatting_config['background_color'],
-                            entire_row=True,  # Apply formatting to the entire row
-                            col_index=0  # This value is ignored because `entire_row=True`
-                        )
+                requests.append(
+                    self._create_request(
+                        row_index=row - 1,  # Convert to 0-based indexing
+                        num_cols=num_cols,
+                        sheet_id=sheet_id,
+                        format_style=formatting_config['background_color'],
+                        entire_row=True,  # Apply formatting to the entire row
+                        col_index=0  # This value is ignored because `entire_row=True`
                     )
+                )
     
         if 'bold_rows' in formatting_config:
             # Apply bold formatting to specific rows
             for row in formatting_config['bold_rows']:
-                for col in range(num_cols):
-                    requests.append(
-                        self._create_request(
-                            row_index=row - 1,  # Convert to 0-based indexing
-                            num_cols=num_cols,
-                            sheet_id=sheet_id,
-                            format_style={'textFormat': {'bold': True}},
-                            entire_row=True,  # Apply formatting to the entire row
-                            col_index=0  # This value is ignored because `entire_row=True`
-                        )
+                requests.append(
+                    self._create_request(
+                        row_index=row - 1,  # Convert to 0-based indexing
+                        num_cols=num_cols,
+                        sheet_id=sheet_id,
+                        format_style={'textFormat': {'bold': True}},
+                        entire_row=True,  # Apply formatting to the entire row
+                        col_index=0  # This value is ignored because `entire_row=True`
                     )
+                )
         return requests
 
     def _apply_conditional_formatting(self, conditional_formats, sheet_id, values):
@@ -115,7 +113,7 @@ class SheetFormatter:
                                 num_cols=num_cols,
                                 sheet_id=sheet_id,
                                 format_style=cond_format['format'],
-                                entire_row=True,  # Entire row
+                                entire_row=True,  # Apply to the entire row
                                 col_index=0  # Ignored when entire_row=True
                             )
                         )
@@ -131,7 +129,7 @@ class SheetFormatter:
                                         num_cols=num_cols,
                                         sheet_id=sheet_id,
                                         format_style=cond_format['format'],
-                                        entire_row=False,  # Specific column
+                                        entire_row=False,  # Apply to specific column
                                         col_index=col_index
                                     )
                                 )
