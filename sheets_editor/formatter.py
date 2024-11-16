@@ -129,21 +129,34 @@ class SheetFormatter:
                 for i, row in enumerate(values[1:], 1):  # Skip header row, start from the second row
                     conditions_met = self._check_conditions(cond_format['conditions'], row, header)
                     if conditions_met:
-                        # Apply formatting to the specified columns
-                        for condition in cond_format['conditions']:
-                            column_name = condition['column']
-                            if column_name in header:
-                                col_index = header.index(column_name)
-                                requests.append(
-                                    self._create_request(
-                                        row_index=i,
-                                        num_cols=num_cols,
-                                        sheet_id=sheet_id,
-                                        format_style=cond_format['format'],
-                                        entire_row=False,  # Apply to a specific column
-                                        col_index=col_index
-                                    )
+                        # Apply formatting to the entire row if specified
+                        if cond_format.get('entire_row', False):
+                            requests.append(
+                                self._create_request(
+                                    row_index=i,
+                                    num_cols=num_cols,
+                                    sheet_id=sheet_id,
+                                    format_style=cond_format['format'],
+                                    entire_row=True,  # Apply to the entire row
+                                    col_index=0  # Ignored when entire_row=True
                                 )
+                            )
+                        else:
+                            # Apply formatting only to the columns specified in the conditions
+                            for condition in cond_format['conditions']:
+                                column_name = condition['column']
+                                if column_name in header:
+                                    col_index = header.index(column_name)
+                                    requests.append(
+                                        self._create_request(
+                                            row_index=i,
+                                            num_cols=num_cols,
+                                            sheet_id=sheet_id,
+                                            format_style=cond_format['format'],
+                                            entire_row=False,  # Apply to a specific column
+                                            col_index=col_index
+                                        )
+                                    )
                         # Apply formatting to extra columns if specified
                         if 'extra_columns' in cond_format:
                             for extra_column in cond_format['extra_columns']:
@@ -212,6 +225,6 @@ class SheetFormatter:
                 "cell": {
                     "userEnteredFormat": user_entered_format
                 },
-                "fields": "userEnteredFormat(backgroundColor,textFormat)"  # Specify fields to update
+                "fields": "userEnteredFormat"  # Specify all fields to update
             }
         }
