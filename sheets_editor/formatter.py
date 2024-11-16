@@ -102,23 +102,34 @@ class SheetFormatter:
         num_cols = len(header)
     
         for cond_format in conditional_formats:
-            for i, row in enumerate(values[1:], 1):  # Skip header row, start from the second row
-                conditions_met = self._check_conditions(cond_format['conditions'], row, header)
-                if conditions_met:
-                    # Apply formatting to the entire row or specific columns
-                    if cond_format.get('entire_row', False):
-                        requests.append(
-                            self._create_request(
-                                row_index=i,  # Row index (1-based, skipping header)
-                                num_cols=num_cols,
-                                sheet_id=sheet_id,
-                                format_style=cond_format['format'],
-                                entire_row=True,  # Apply to the entire row
-                                col_index=0  # Ignored when entire_row=True
-                            )
-                        )
-                    else:
-                        # Apply formatting to specific columns
+            formatting_type = cond_format.get('type', 'all_conditions')  # Default to 'all_conditions'
+    
+            if formatting_type == 'case_specific':
+                # Handle case-specific formatting
+                for condition, format_style in zip(cond_format['conditions'], cond_format['format']):
+                    column_name = condition['column']
+                    condition_func = condition['condition']
+                    if column_name in header:
+                        col_index = header.index(column_name)
+                        for i, row in enumerate(values[1:], 1):  # Skip header row, start from the second row
+                            cell_value = row[col_index]
+                            if condition_func(cell_value):  # Check if the condition is met
+                                requests.append(
+                                    self._create_request(
+                                        row_index=i,
+                                        num_cols=num_cols,
+                                        sheet_id=sheet_id,
+                                        format_style=format_style,
+                                        entire_row=False,  # Apply to the specific column
+                                        col_index=col_index
+                                    )
+                                )
+            elif formatting_type == 'all_conditions':
+                # Handle all-conditions formatting
+                for i, row in enumerate(values[1:], 1):  # Skip header row, start from the second row
+                    conditions_met = self._check_conditions(cond_format['conditions'], row, header)
+                    if conditions_met:
+                        # Apply formatting to the specified columns
                         for condition in cond_format['conditions']:
                             column_name = condition['column']
                             if column_name in header:
@@ -129,10 +140,25 @@ class SheetFormatter:
                                         num_cols=num_cols,
                                         sheet_id=sheet_id,
                                         format_style=cond_format['format'],
-                                        entire_row=False,  # Apply to specific column
+                                        entire_row=False,  # Apply to a specific column
                                         col_index=col_index
                                     )
                                 )
+                        # Apply formatting to extra columns if specified
+                        if 'extra_columns' in cond_format:
+                            for extra_column in cond_format['extra_columns']:
+                                if extra_column in header:
+                                    extra_col_index = header.index(extra_column)
+                                    requests.append(
+                                        self._create_request(
+                                            row_index=i,
+                                            num_cols=num_cols,
+                                            sheet_id=sheet_id,
+                                            format_style=cond_format['format'],
+                                            entire_row=False,  # Apply to the specific extra column
+                                            col_index=extra_col_index
+                                        )
+                                    )
         return requests
         
     def _check_conditions(self, conditions, row, header):
