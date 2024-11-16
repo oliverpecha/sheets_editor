@@ -103,20 +103,33 @@ class SheetFormatter:
             # Send batch update to Google Sheets API
             worksheet.spreadsheet.batch_update({"requests": requests})
 
-    def _create_request(self, row_index, col_index, sheet_id, format_style):
-        """Create a request to format a specific cell."""
+    def _create_request(self, row_index, num_cols, sheet_id, format_style, entire_row, col_index):
+        """
+        Creates a formatting request for a specific cell or the entire row.
+        """
+        start_col = 0 if entire_row else col_index
+        end_col = num_cols if entire_row else col_index + 1
+    
+        user_entered_format = {}
+    
+        # Handle backgroundColor and other format styles
+        if "red" in format_style and "green" in format_style and "blue" in format_style:
+            user_entered_format["backgroundColor"] = format_style  # Nest the color object properly
+        else:
+            user_entered_format.update(format_style)  # Add other formatting styles
+    
         return {
             "repeatCell": {
                 "range": {
                     "sheetId": sheet_id,
                     "startRowIndex": row_index,
                     "endRowIndex": row_index + 1,
-                    "startColumnIndex": col_index,
-                    "endColumnIndex": col_index + 1
+                    "startColumnIndex": start_col,
+                    "endColumnIndex": end_col
                 },
                 "cell": {
-                    "userEnteredFormat": format_style
+                    "userEnteredFormat": user_entered_format
                 },
-                "fields": "userEnteredFormat"
+                "fields": "userEnteredFormat(backgroundColor,textFormat)"  # Specify fields to update
             }
         }
