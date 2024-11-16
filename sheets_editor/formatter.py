@@ -25,10 +25,31 @@ class SheetFormatter:
                 merged_format[key].update(value)
         return merged_format
 
-    def _update_cache(self, row_index, col_index, new_format):
-        """Update the formatting cache for a specific cell."""
+    def _update_cache(self, row_index, col_index, new_format, apply_only_if_empty=False):
+        """
+        Update the formatting cache for a specific cell.
+        
+        If `apply_only_if_empty` is True, new formatting will only be applied to empty formatting fields.
+        """
         current_format = self.formatting_cache[row_index][col_index]
-        self.formatting_cache[row_index][col_index] = self._merge_formatting(current_format, new_format)
+    
+        # Merge the new format with the current format
+        for key, value in new_format.items():
+            if key not in current_format:
+                # If the key doesn't exist, add it
+                current_format[key] = value
+            else:
+                if isinstance(current_format[key], dict) and isinstance(value, dict):
+                    # Merge dictionaries (e.g., backgroundColor, textFormat)
+                    for sub_key, sub_value in value.items():
+                        if sub_key not in current_format[key] or not apply_only_if_empty:
+                            current_format[key][sub_key] = sub_value
+                elif not apply_only_if_empty:
+                    # Overwrite non-dict properties if `apply_only_if_empty` is False
+                    current_format[key] = value
+    
+        # Update the cache
+        self.formatting_cache[row_index][col_index] = current_format
 
     def _generate_requests_from_cache(self, sheet_id, num_cols):
         """
@@ -137,10 +158,10 @@ class SheetFormatter:
         """Apply conditional formatting based on the provided rules."""
         header = values[0]  # Assuming the first row is the header
         num_cols = len(header)
-
+    
         for cond_format in conditional_formats:
             formatting_type = cond_format.get('type', 'all_conditions')  # Default to 'all_conditions'
-
+    
             if formatting_type == 'case_specific':
                 # Handle case-specific formatting
                 for condition, format_style in zip(cond_format['conditions'], cond_format['format']):
@@ -148,7 +169,7 @@ class SheetFormatter:
                     condition_func = condition['condition']
                     if column_name in header:
                         col_index = header.index(column_name)
-                        for i, row in enumerate(values[1:], 1):  # Skip header row
+                        for i, row in enumerate(values[1:], 1):  # Skip header row, start from the second row
                             cell_value = row[col_index]
                             if condition_func(cell_value):  # Check if the condition is met
                                 self._update_cache(i, col_index, format_style)
@@ -157,15 +178,17 @@ class SheetFormatter:
                 for i, row in enumerate(values[1:], 1):  # Skip header row
                     conditions_met = self._check_conditions(cond_format['conditions'], row, header)
                     if conditions_met:
+                        # Apply formatting to the entire row if specified
                         if cond_format.get('entire_row', False):
                             for col_index in range(num_cols):
-                                self._update_cache(i, col_index, cond_format['format'])
+                                self._update_cache(i, col_index, cond_format['format'], apply_only_if_empty=False)
                         else:
+                            # Apply formatting only to the columns specified in the conditions
                             for condition in cond_format['conditions']:
                                 column_name = condition['column']
                                 if column_name in header:
                                     col_index = header.index(column_name)
-                                    self._update_cache(i, col_index, cond_format['format'])
+                                    self._update_cache(i, col_index, cond_format['format'], apply_only_if_empty=False)
 
     def _check_conditions(self, conditions, row, header):
         """Check if all conditions are met for a given row."""
