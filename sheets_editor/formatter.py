@@ -211,4 +211,12 @@ class SheetFormatter:
         # Debug: Print all final requests
         print("\nFinal batch requests:")
         import json
-        print(json.dumps(request
+        print(json.dumps(requests, indent=2))
+
+        # Send batch update to Google Sheets API
+        if requests:
+            try:
+                worksheet.spreadsheet.batch_update({"requests": requests})
+            except Exception as e:
+                print(f"Error applying formatting: {e}")
+                raise
