@@ -120,6 +120,15 @@ class SheetFormatter:
                             cell_value = row[col_index]
                             if condition_func(cell_value):  # Check if the condition is met
                                 self._update_cache(i, col_index, format_style)
+                                if cond_format.get('entire_row', False):
+                                    for extra_col in range(num_cols):
+                                        if extra_col != col_index:
+                                            self._update_cache(i, extra_col, format_style)
+                                if 'extra_columns' in cond_format:
+                                    for extra_col in cond_format['extra_columns']:
+                                        if extra_col in header:
+                                            extra_col_index = header.index(extra_col)
+                                            self._update_cache(i, extra_col_index, format_style)
             elif formatting_type == 'all_conditions':
                 # Handle all-conditions formatting
                 for i, row in enumerate(values[1:], 1):  # Skip header row
@@ -134,6 +143,11 @@ class SheetFormatter:
                                 if column_name in header:
                                     col_index = header.index(column_name)
                                     self._update_cache(i, col_index, cond_format['format'])
+                            if 'extra_columns' in cond_format:
+                                for extra_col in cond_format['extra_columns']:
+                                    if extra_col in header:
+                                        extra_col_index = header.index(extra_col)
+                                        self._update_cache(i, extra_col_index, cond_format['format'])
 
     def _check_conditions(self, conditions: list, row: list, header: list) -> bool:
         """Check if all conditions are met for a given row."""
@@ -150,35 +164,36 @@ class SheetFormatter:
     def format_worksheet(self, worksheet, formatting_config=None, conditional_formats=None):
         """Apply absolute and conditional formatting to the worksheet."""
         if not formatting_config and not conditional_formats:
-            return
-
+        return
+        
+        
         # Get all values to determine the number of rows and columns
-        values = worksheet.get_all_values()
-        if not values:
-            return
-
-        num_rows = len(values)
-        num_cols = len(values[0]) if values else 0
-        sheet_id = worksheet._properties['sheetId']  # Get the sheet ID
-
-        # Initialize cache for the entire sheet
-        self._initialize_cache(num_rows, num_cols)
-
-        # Apply absolute formatting
-        if formatting_config:
-            self._apply_absolute_formatting(formatting_config, sheet_id, num_rows, num_cols)
-
-        # Apply conditional formatting
-        if conditional_formats:
-            self._apply_conditional_formatting(conditional_formats, sheet_id, values)
-
-        # Generate batch requests from the cache
-        requests = self._generate_requests_from_cache(sheet_id, num_cols)
-
-        # Send batch update to Google Sheets API
-        if requests:
-            try:
-                worksheet.spreadsheet.batch_update({"requests": requests})
-            except Exception as e:
-                print(f"Error applying formatting: {e}")
-                raise
+            values = worksheet.get_all_values()
+            if not values:
+                return
+        
+            num_rows = len(values)
+            num_cols = len(values[0]) if values else 0
+            sheet_id = worksheet._properties['sheetId']  # Get the sheet ID
+        
+            # Initialize cache for the entire sheet
+            self._initialize_cache(num_rows, num_cols)
+        
+            # Apply absolute formatting
+            if formatting_config:
+                self._apply_absolute_formatting(formatting_config, sheet_id, num_rows, num_cols)
+        
+            # Apply conditional formatting
+            if conditional_formats:
+                self._apply_conditional_formatting(conditional_formats, sheet_id, values)
+        
+            # Generate batch requests from the cache
+            requests = self._generate_requests_from_cache(sheet_id, num_cols)
+        
+            # Send batch update to Google Sheets API
+            if requests:
+                try:
+                    worksheet.spreadsheet.batch_update({"requests": requests})
+                except Exception as e:
+                    print(f"Error applying formatting: {e}")
+                    raise
