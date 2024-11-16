@@ -44,16 +44,22 @@ class SheetFormatter:
         num_cols = len(values[0]) if values else 0
         sheet_id = worksheet._properties['sheetId']  # Get the sheet ID
     
+        # Initialize cache for the entire sheet
+        self._initialize_cache(num_rows, num_cols)
+    
         # Initialize the batch requests list
         requests = []
     
         # Apply absolute formatting
         if formatting_config:
-            requests.extend(self._apply_absolute_formatting(formatting_config, sheet_id, num_rows, num_cols))
+            self._apply_absolute_formatting(formatting_config, sheet_id, num_rows, num_cols)
     
         # Apply conditional formatting
         if conditional_formats:
-            requests.extend(self._apply_conditional_formatting(conditional_formats, sheet_id, values))
+            self._apply_conditional_formatting(conditional_formats, sheet_id, values)
+    
+        # Generate batch requests from the cache
+        requests = self._generate_requests_from_cache(sheet_id, num_cols)
     
         # Send batch update to Google Sheets API
         if requests:
