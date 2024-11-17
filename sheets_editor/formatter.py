@@ -4,6 +4,7 @@ from typing import Any, Dict
 class SheetFormatter:
     def __init__(self):
         self.formatting_cache = {}  # Initialize the formatting cache
+        self.debug_mode = True  # Enable debugging for the first instance
 
     def _initialize_cache(self, num_rows: int, num_cols: int):
         """Initialize the formatting cache for all cells in the sheet."""
@@ -14,7 +15,7 @@ class SheetFormatter:
     def _merge_formatting(self, current_format: Dict[str, Any], new_format: Dict[str, Any]) -> Dict[str, Any]:
         """
         Merge new formatting into the current formatting for a cell.
-        Conflicting properties are overwritten by the new format.
+        Conflicting properties are merged where possible.
         """
         merged_format = current_format.copy()
         for key, value in new_format.items():
@@ -36,6 +37,9 @@ class SheetFormatter:
         """
         current_format = self.formatting_cache[row_index][col_index]
         self.formatting_cache[row_index][col_index] = self._merge_formatting(current_format, new_format)
+        if self.debug_mode and row_index == 1:  # Debug only the first instance after header
+            print(f"DEBUG: Updating cell ({row_index}, {col_index}) with format: {new_format}")
+            print(f"DEBUG: Merged format: {self.formatting_cache[row_index][col_index]}")
 
     def _generate_requests_from_cache(self, sheet_id: int, num_cols: int):
         """
@@ -102,17 +106,13 @@ class SheetFormatter:
                     self._update_cache(row - 1, col, {'textFormat': {'bold': True}})
 
     def _apply_conditional_formatting(self, conditional_formats: list, sheet_id: int, values: list):
+        """Apply conditional formatting based on the provided rules."""
         header = values[0]  # Assuming the first row is the header
         num_cols = len(header)
-    
-        # Dictionary to keep track of applied formatting for each cell
-        applied_formatting = {
-            row: {col: False for col in range(num_cols)} for row in range(len(values))
-        }
-    
+
         for cond_format in conditional_formats:
-            formatting_type = cond_format.get('type', 'all_conditions')  
-    
+            formatting_type = cond_format.get('type', 'all_conditions')  # Default to 'all_conditions'
+
             if formatting_type == 'case_specific':
                 # Handle case-specific formatting
                 for condition, format_style in zip(cond_format['conditions'], cond_format['format']):
@@ -123,30 +123,26 @@ class SheetFormatter:
                         for i, row in enumerate(values[1:], 1):  # Skip header row
                             cell_value = row[col_index]
                             if condition_func(cell_value):  # Check if the condition is met
-                                # Apply formatting only if not already applied
-                                if not applied_formatting[i][col_index]:
-                                    self._update_cache(i, col_index, format_style)
-                                    applied_formatting[i][col_index] = True
-                                    if cond_format.get('entire_row', False):
-                                        for extra_col in range(num_cols):
-                                            if extra_col != col_index:
-                                                self._update_cache(i, extra_col, format_style)
-                                                applied_formatting[i][extra_col] = True
-            elif formatting_type == 'all_conditions':
-                # Check all conditions for each cell
-                for row in range(1, len(values)):  # Skip header row
-                    for col in range(num_cols):
-                        if all(condition_func(values[row][header.index(column_name)]) for condition, condition_func, column_name in zip(cond_format['conditions'], cond_format['condition_funcs'], cond_format['columns'])):
-                            # Apply formatting only if not already applied
-                            if not applied_formatting[row][col]:
-                                self._update_cache(row, col, cond_format['format'])
-                                applied_formatting[row][col] = True
+                                self._update_cache(i, col_index, format_style)
                                 if cond_format.get('entire_row', False):
                                     for extra_col in range(num_cols):
-                                        if extra_col != col:
-                                            self._update_cache(row, extra_col, cond_format['format'])
-                                            applied_formatting[row][extra_col] = True
-                                print(f"Applied formatting to cell ({row}, {col}): {cond_format['format']}")  # Debugging output
+                                        if extra_col != col_index:
+                                            self._update_cache(i, extra_col, format_style)
+                                if 'extra_columns' in cond_format:
+                                    for extra_col in cond_format['extra_columns']:
+                                        if extra_col in header:
+                                            extra_col_index = header.index(extra_col)
+                                            self._update_cache(i, extra_col_index, format_style)
+
+            elif formatting_type == 'all_conditions':
+                # Handle all_conditions formatting
+                all_conditions = cond_format['conditions']
+                format_style = cond_format['format']
+                for i, row in enumerate(values[1:], 1):  # Skip header row
+                    if all(condition_func(row[header.index(condition['column'])]) for condition in all_conditions):
+                        for col in range(num_cols):
+                            self._update_cache(i, col, format_style)
+
                                 
 
     def _check_conditions(self, conditions: list, row: list, header: list) -> bool:
