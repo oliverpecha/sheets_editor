@@ -9,7 +9,7 @@ class SheetDeleter:
             'https://www.googleapis.com/auth/drive'
         ]
         #self.gc = gspread.authorize(self.credentials)
-        self.deleter = SheetDeleter()
+        #self.deleter = SheetDeleter()
 
     def _open_spreadsheet(self, spreadsheet_name):
         """Opens a spreadsheet."""
