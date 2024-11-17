@@ -1,10 +1,104 @@
 from typing import Any, Dict
 
-class SheetFormatter:
-    def __init__(self):
-        """Initialize the formatting cache."""
-        self.formatting_cache = {}
-        self.debug_enabled = True  # Control debug output globally
+class SheetsExporter:
+    def __init__(self, credentials, config):
+        """
+        Initialize the SheetsExporter.
+        
+        Args:
+            credentials: Google service account credentials
+            config: Configuration object containing export settings
+        """
+        self.credentials = credentials
+        self.config = config
+        self.scope = [
+            'https://www.googleapis.com/auth/spreadsheets',
+            'https://www.googleapis.com/auth/drive'
+        ]
+        self.gc = gspread.authorize(
+            Credentials.from_service_account_info(
+                self.credentials,
+                scopes=self.scope
+            )
+        )
+        self.formatter = SheetFormatter()  # Initialize the formatter
+
+    def export_table(self, data, version, sheet_name, spreadsheet, formatting=None, conditional_formats=None):
+        """
+        Export data to a Google Sheets worksheet with formatting support.
+        
+        Args:
+            data: List of dictionaries containing the data to export
+            version: Version string for tracking
+            sheet_name: Name of the sheet to create/update
+            spreadsheet: Google Sheets spreadsheet object
+            formatting: Optional dictionary containing absolute formatting rules
+            conditional_formats: Optional list of conditional formatting rules
+        """
+        try:
+            # Create or get worksheet
+            try:
+                worksheet = spreadsheet.worksheet(sheet_name)
+                print(f"Found existing worksheet: {sheet_name}")
+            except gspread.WorksheetNotFound:
+                worksheet = spreadsheet.add_worksheet(title=sheet_name, rows="1000", cols="26")
+                print(f"Created new worksheet: {sheet_name}")
+    
+            # Handle empty data case
+            if not data:
+                worksheet.clear()
+                worksheet.update('A1', [['No data available']])
+                print("No data to export")
+                return worksheet
+    
+            # Convert data to DataFrame
+            df = pd.DataFrame(data)
+            
+            # Apply column ignoring if specified in config
+            if hasattr(self.config, 'ignore_columns') and self.config.ignore_columns:
+                df = df.drop(columns=self.config.ignore_columns, errors='ignore')
+                print(f"Ignored columns: {self.config.ignore_columns}")
+    
+            # Get headers and values
+            headers = df.columns.tolist()
+            values = df.values.tolist()
+    
+            # Prepare data for upload with headers
+            all_values = [headers] + values
+    
+            # Clear existing content
+            worksheet.clear()
+    
+            # Update the worksheet with data
+            worksheet.update('A1', all_values, value_input_option='RAW')
+            print(f"Updated worksheet with {len(values)} rows of data")
+    
+            # Apply formatting if provided
+            if formatting or conditional_formats:
+                print("Applying formatting...")
+                try:
+                    self.formatter.format_worksheet(
+                        worksheet=worksheet,
+                        formatting_config=formatting,
+                        conditional_formats=conditional_formats
+                    )
+                except Exception as e:
+                    print(f"Error applying formatting: {str(e)}")
+                    raise
+    
+            # Auto-resize columns to fit content
+            try:
+                worksheet.columns_auto_resize(0, len(headers))
+                print("Auto-resized columns")
+            except Exception as e:
+                print(f"Warning: Could not auto-resize columns: {str(e)}")
+    
+            # Return the worksheet for potential further operations
+            return worksheet
+    
+        except Exception as e:
+            print(f"Error in export_table: {str(e)}")
+            raise
 
     def format_worksheet(self, worksheet, formatting_config=None, conditional_formats=None):
         """
@@ -12,33 +106,58 @@ class SheetFormatter:
         
         Args:
             worksheet: The worksheet object to format
-            formatting_config: Dictionary containing absolute formatting rules
-            conditional_formats: List of conditional formatting rules
+            formatting_config: Optional dictionary containing absolute formatting rules
+            conditional_formats: Optional list of conditional formatting rules
         """
+        if self.debug_enabled:
+            print(f"\nFormatting worksheet: {worksheet.title}")
+            print(f"Absolute formatting config: {formatting_config}")
+            print(f"Number of conditional formats: {len(conditional_formats) if conditional_formats else 0}")
+    
         # Get all values from worksheet
         values = worksheet.get_all_values()
         if not values:
             print("No values found in worksheet")
-            return []
-
+            return
+    
         # Get worksheet properties
         num_rows = len(values)
         num_cols = len(values[0]) if values else 0
         sheet_id = worksheet.id
-
-        # Initialize the formatting cache
-        self._initialize_cache(num_rows, num_cols)
-
-        # Apply absolute formatting if configured
-        if formatting_config:
-            self._apply_absolute_formatting(formatting_config, sheet_id, num_rows, num_cols)
-
-        # Apply conditional formatting if configured
-        if conditional_formats:
-            self._apply_conditional_formatting(conditional_formats, sheet_id, values)
-
-        # Generate final formatting requests
-        return self._generate_requests_from_cache(sheet_id, num_cols)
+    
+        try:
+            # Initialize the formatting cache
+            self._initialize_cache(num_rows, num_cols)
+    
+            # Apply absolute formatting if configured
+            if formatting_config:
+                self._apply_absolute_formatting(formatting_config, sheet_id, num_rows, num_cols)
+    
+            # Apply conditional formatting if configured
+            if conditional_formats:
+                self._apply_conditional_formatting(conditional_formats, sheet_id, values)
+    
+            # Generate formatting requests
+            requests = self._generate_requests_from_cache(sheet_id, num_cols)
+            
+            if self.debug_enabled:
+                print(f"\nGenerated {len(requests)} formatting requests")
+                if requests:
+                    print("Sample request:", requests[0])
+    
+            # Apply the formatting requests directly
+            if requests:
+                try:
+                    worksheet.spreadsheet.batch_update({"requests": requests})
+                    if self.debug_enabled:
+                        print("✅ Successfully applied formatting requests")
+                except Exception as e:
+                    print(f"❌ Error applying formatting requests: {str(e)}")
+                    raise
+    
+        except Exception as e:
+            print(f"Error during formatting: {str(e)}")
+            raise
 
     def _initialize_cache(self, num_rows: int, num_cols: int):
         """Initialize the formatting cache for all cells in the sheet."""
