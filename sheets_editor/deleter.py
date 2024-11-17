@@ -1,6 +1,6 @@
 import gspread
 
-class Deleter:
+class SheetDeleter:
     def __init__(self, credentials):
         self.credentials = credentials
         self.scope = [
