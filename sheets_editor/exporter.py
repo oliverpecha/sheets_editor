@@ -33,16 +33,20 @@ class SheetsExporter:
                 print(f"Error creating spreadsheet: {e}")
                 raise  # Re-raise the exception
 
-    def export_table(
-        self, data: List[Dict], version: str, sheet_name: str,
+def export_table(
+        self, data: List[Dict], sheet_name: str, version: Optional[str] = None, #version is now optional
         columns: Optional[List[str]] = None,
         spreadsheet: Optional[gspread.Spreadsheet] = None,
         formatting: Optional[Dict] = None,
         conditional_formats: Optional[List[Dict]] = None
     ) -> None:
-        """Exports data to a Google Sheet, handling existing sheets."""
-        
-        spreadsheet_name = f"{self.config.file_name}_{version}"
+        """Exports data to a Google Sheet, handling existing sheets and optional versions."""
+    
+        if version:  # Append version if provided
+            spreadsheet_name = f"{self.config.file_name}_{version}"
+        else:
+            spreadsheet_name = self.config.file_name  # Use the base file name
+    
         if spreadsheet is None:
             spreadsheet = self._open_spreadsheet(spreadsheet_name)
         
