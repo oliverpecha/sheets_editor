@@ -136,3 +136,32 @@ class SheetFormatter:
                             else:
                                 if i == 1:  # Only print debug output for the first instance
                                     print(f"Skipped conditional formatting for cell ({i}, {col_index+1})")
+
+
+    def format_worksheet(self, worksheet, data, formatting_config, conditional_formats):
+        """
+        Formats a worksheet based on the provided formatting configuration and conditional formats.
+    
+        Args:
+            worksheet: The worksheet to format.
+            data: The data to be written to the worksheet.
+            formatting_config: The formatting configuration for the worksheet.
+            conditional_formats: The conditional formats for the worksheet.
+        """
+        num_rows = len(data) + 1  # +1 for header row
+        num_cols = len(data[0])
+    
+        self._initialize_cache(num_rows, num_cols)
+    
+        # Apply absolute formatting
+        self._apply_absolute_formatting(formatting_config, worksheet.id, num_rows, num_cols)
+    
+        # Apply conditional formatting
+        self._apply_conditional_formatting(conditional_formats, worksheet.id, data)
+    
+        # Generate batch update requests from the formatting cache
+        requests = self._generate_requests_from_cache(worksheet.id, num_cols)
+    
+        # Update the worksheet with the batch update requests
+        body = {'requests': requests}
+        worksheet.spreadsheet.batch_update(body)
