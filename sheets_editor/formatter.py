@@ -150,3 +150,30 @@ class SheetFormatter:
                             extra_columns_indices = [header.index(col) for col in cond_format['extra_columns']]
                             for extra_col in extra_columns_indices:
                                 self._update_cache(row, extra_col, cond_format['format'])
+
+
+    def format_worksheet(self, worksheet, values):
+        """
+        Apply formatting to a worksheet based on the cached formatting rules.
+    
+        :param worksheet: The gspread Worksheet object to format.
+        :param values: A 2D list representing the sheet data (including headers).
+        """
+        sheet_id = worksheet.id
+        num_rows = len(values)
+        num_cols = len(values[0]) if values else 0
+    
+        # Initialize the formatting cache
+        self._initialize_cache(num_rows, num_cols)
+    
+        # Apply absolute formatting (if any)
+        if self.absolute_formatting:
+            self._apply_absolute_formatting(self.absolute_formatting, sheet_id, num_rows, num_cols)
+    
+        # Apply conditional formatting
+        if self.conditional_formats:
+            self._apply_conditional_formatting(self.conditional_formats, sheet_id, values)
+    
+        # Generate and apply the formatting requests
+        requests = self._generate_requests_from_cache(sheet_id, num_cols)
+        worksheet.batch_update(requests)
