@@ -33,7 +33,7 @@ class SheetsExporter:
                 print(f"Error creating spreadsheet: {e}")
                 raise  # Re-raise the exception
 
-def export_table(
+    def export_table(
         self, data: List[Dict], sheet_name: str, version: Optional[str] = None, #version is now optional
         columns: Optional[List[str]] = None,
         spreadsheet: Optional[gspread.Spreadsheet] = None,
