@@ -33,14 +33,21 @@ class SheetDeleter:
                 print("Sheet1 didn't exist.")
 
     def delete_all_sheets(self, spreadsheet_name):
-        """Deletes all sheets in the spreadsheet."""
+        """Deletes all sheets and then adds a mandatory default new sheet."""
         spreadsheet = self._open_spreadsheet(spreadsheet_name)
         if spreadsheet:
             try:
                 worksheets = spreadsheet.worksheets()
+                # Delete existing sheets
                 for worksheet in worksheets:
                     print(f"Deleting sheet: {worksheet.title}")
                     spreadsheet.del_worksheet(worksheet)
                     print(f"Deleted sheet: {worksheet.title}")
+    
+                # Add a new sheet
+                new_sheet_name = "Sheet1"
+                spreadsheet.add_worksheet(title=new_sheet_name, rows=100, cols=20)
+                print(f"Added new sheet: {new_sheet_name}")
+    
             except Exception as e:
-                print(f"An error occurred while deleting sheets: {e}")
+                print(f"An error occurred while deleting/adding sheets: {e}")
