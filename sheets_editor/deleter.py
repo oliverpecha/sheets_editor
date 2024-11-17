@@ -1,4 +1,5 @@
 import gspread
+from typing import Dict
 
 class SheetDeleter:
     def __init__(self, credentials: Dict):
