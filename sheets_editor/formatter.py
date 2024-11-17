@@ -1,28 +1,11 @@
 from typing import Any, Dict
 
-class SheetsExporter:
-    def __init__(self, credentials, config):
-        """
-        Initialize the SheetsExporter.
+class SheetFormatter:
+    def __init__(self):
+        """Initialize the formatting cache."""
+        self.formatting_cache = {}
+        self.debug_enabled = True
         
-        Args:
-            credentials: Google service account credentials
-            config: Configuration object containing export settings
-        """
-        self.credentials = credentials
-        self.config = config
-        self.scope = [
-            'https://www.googleapis.com/auth/spreadsheets',
-            'https://www.googleapis.com/auth/drive'
-        ]
-        self.gc = gspread.authorize(
-            Credentials.from_service_account_info(
-                self.credentials,
-                scopes=self.scope
-            )
-        )
-        self.formatter = SheetFormatter()  # Initialize the formatter
-
     def export_table(self, data, version, sheet_name, spreadsheet, formatting=None, conditional_formats=None):
         """
         Export data to a Google Sheets worksheet with formatting support.
