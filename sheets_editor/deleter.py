@@ -9,14 +9,12 @@ class SheetDeleter:
             'https://www.googleapis.com/auth/spreadsheets',
             'https://www.googleapis.com/auth/drive'
         ]
-        self.gc = gspread.authorize(Credentials.from_service_account_info(self.credentials, scopes=self.scope))
-        #self.deleter = SheetDeleter()
-
+        
     def _open_spreadsheet(self, spreadsheet_name):
         """Opens a spreadsheet."""
-        
+        gc = gspread.authorize(Credentials.from_service_account_info(self.credentials, scopes=self.scope))
         try:
-            spreadsheet = self.gc.open(spreadsheet_name)
+            spreadsheet = gc.open(spreadsheet_name)
             print(f"Opened existing spreadsheet: {spreadsheet_name}")
             return spreadsheet
         except gspread.SpreadsheetNotFound:
