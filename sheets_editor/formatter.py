@@ -176,9 +176,86 @@ class SheetFormatter:
             if column_name in header:
                 col_index = header.index(column_name)
                 condition_func = condition['condition']
-
+    
                 for row_idx, row in enumerate(values[1:], 1):
                     cell_value = row[col_index]
                     if condition_func(cell_value):
                         current_format = self.formatting_cache[row_idx][col_index].copy()
-                        merged_format =
+                        merged_format = self._merge_formatting(current_format, format_style)
+                        self._update_cache(row_idx, col_index, merged_format)
+    
+                        if format_rule.get('entire_row', False):
+                            # Apply to entire row
+                            for col in range(len(header)):
+                                if col != col_index:  # Skip the original column
+                                    row_format = self.formatting_cache[row_idx][col].copy()
+                                    merged_row_format = self._merge_formatting(row_format, format_style)
+                                    self._update_cache(row_idx, col, merged_row_format)
+    
+                        if format_rule.get('extra_columns'):
+                            # Apply to specified extra columns
+                            for extra_col in format_rule['extra_columns']:
+                                if extra_col in header:
+                                    extra_col_idx = header.index(extra_col)
+                                    extra_format = self.formatting_cache[row_idx][extra_col_idx].copy()
+                                    merged_extra_format = self._merge_formatting(extra_format, format_style)
+                                    self._update_cache(row_idx, extra_col_idx, merged_extra_format)
+    
+                        if self.debug_enabled and row_idx == debug_row:
+                            print(f"\nCase-specific format applied:")
+                            print(f"Column: {column_name}, Value: {cell_value}")
+                            print(f"Format applied: {merged_format}")
+    
+    def _apply_all_conditions_formatting(self, format_rule, header, values, num_cols, debug_row):
+        """Handle all-conditions conditional formatting."""
+        for row_idx, row in enumerate(values[1:], 1):
+            conditions_met = True
+            debug_info = []
+    
+            # Check all conditions
+            for condition in format_rule['conditions']:
+                column_name = condition['column']
+                if column_name in header:
+                    col_index = header.index(column_name)
+                    cell_value = row[col_index]
+                    condition_met = condition['condition'](cell_value)
+                    conditions_met = conditions_met and condition_met
+    
+                    if self.debug_enabled and row_idx == debug_row:
+                        debug_info.append(f"Column '{column_name}': value={cell_value}, condition met={condition_met}")
+    
+            # Apply formatting if all conditions are met
+            if conditions_met:
+                format_style = format_rule['format']
+                
+                if format_rule.get('entire_row', False):
+                    # Apply to entire row
+                    for col_idx in range(num_cols):
+                        current_format = self.formatting_cache[row_idx][col_idx].copy()
+                        merged_format = self._merge_formatting(current_format, format_style)
+                        self._update_cache(row_idx, col_idx, merged_format)
+                else:
+                    # Apply only to specified columns
+                    for condition in format_rule['conditions']:
+                        column_name = condition['column']
+                        if column_name in header:
+                            col_idx = header.index(column_name)
+                            current_format = self.formatting_cache[row_idx][col_idx].copy()
+                            merged_format = self._merge_formatting(current_format, format_style)
+                            self._update_cache(row_idx, col_idx, merged_format)
+    
+                # Apply to extra columns if specified
+                if format_rule.get('extra_columns'):
+                    for extra_col in format_rule['extra_columns']:
+                        if extra_col in header:
+                            extra_col_idx = header.index(extra_col)
+                            extra_format = self.formatting_cache[row_idx][extra_col_idx].copy()
+                            merged_extra_format = self._merge_formatting(extra_format, format_style)
+                            self._update_cache(row_idx, extra_col_idx, merged_extra_format)
+    
+                # Debug output for first row
+                if self.debug_enabled and row_idx == debug_row:
+                    print("\nAll conditions format applied:")
+                    for debug_line in debug_info:
+                        print(debug_line)
+                    print(f"Format applied: {format_style}")
