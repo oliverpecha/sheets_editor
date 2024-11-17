@@ -1,6 +1,5 @@
 from typing import Any, Dict
 
-
 class SheetFormatter:
     def __init__(self):
         self.formatting_cache = {}  # Initialize the formatting cache
@@ -73,7 +72,11 @@ class SheetFormatter:
 
         # Handle backgroundColor and other format styles
         if "red" in format_style and "green" in format_style and "blue" in format_style:
-            user_entered_format["backgroundColor"] = format_style  # Properly nest the color object
+            user_entered_format["backgroundColor"] = {
+                "red": format_style["red"],
+                "green": format_style["green"],
+                "blue": format_style["blue"]
+            }  # Properly nest the color object
         else:
             user_entered_format.update(format_style)  # Add other formatting styles
 
@@ -142,9 +145,7 @@ class SheetFormatter:
                     if all(condition_func(row[header.index(condition['column'])]) for condition in all_conditions):
                         for col in range(num_cols):
                             self._update_cache(i, col, format_style)
-
-                                
-
+                            
     def _check_conditions(self, conditions: list, row: list, header: list) -> bool:
         """Check if all conditions are met for a given row."""
         for condition in conditions:
