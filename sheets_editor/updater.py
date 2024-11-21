@@ -1,4 +1,4 @@
-class SheetUpdate:
+class SheetUpdater:
     def __init__(self, worksheet):
         """Initialize with the Google Sheets worksheet instance."""
         self.worksheet = worksheet
