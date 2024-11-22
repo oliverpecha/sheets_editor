@@ -90,7 +90,7 @@ class SheetUpdater:
             column_width (int): The desired width of the column in pixels.
          """
          columns_to_update = set()
-         for _, col, _ in cell_updates:
+         for _, col, _, _ in cell_updates:
              columns_to_update.add(col)
 
          body = {
