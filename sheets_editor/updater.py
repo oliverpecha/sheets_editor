@@ -44,7 +44,7 @@ class SheetUpdater:
         except Exception as e:
                 print(f"Error during batch update: {e}")
 
-    def update_image_formulas_extended(
+    def update_image_formulas_with_formatting(
         self,
         cell_updates: list[tuple[int, int, str]],
         column_width: int = None,
@@ -158,41 +158,63 @@ class SheetUpdater:
             print(f"Error setting row height: {e}")
 
 
-    def set_cell_alignment(self, cell_updates, alignment: Alignment):
-        """
-        Sets the alignment of the cells corresponding to the updated formulas.
+def set_cell_alignment(self, cell_updates, alignment_str: str):
+    """
+    Sets the alignment of the cells corresponding to the updated formulas.
 
-        Args:
-            cell_updates (list[tuple[int, int, str]]): A list of tuples, where each tuple
-                                                        contains (row, col, formula_string).
-            alignment (Alignment): The desired alignment (LEFT, RIGHT, CENTER, or FLOAT).
-                                  FLOAT sets both horizontal and vertical alignment to center.
-        """
-        alignment_value = alignment.value
-        body = {
-            "requests": [
-                {
-                    "updateCell": {
-                        "range": {
-                            "sheetId": self.sheet.id,
-                            "startRowIndex": row - 1,  # API indices are zero-based
-                            "endRowIndex": row,
-                            "startColumnIndex": col - 1,
-                            "endColumnIndex": col,
-                        },
-                        "fields": "userEnteredFormat.horizontalAlignment, userEnteredFormat.verticalAlignment",
-                        "cell": {
-                            "userEnteredFormat": {
-                                "horizontalAlignment": "CENTER" if alignment_value == "FLOAT" else alignment_value, #if alignment is set to FLOAT, both horizontal and vertical alignment become center
-                                "verticalAlignment": "MIDDLE" if alignment_value == "FLOAT" else  None
-                            }
-                        },
-                    }
+    Args:
+        cell_updates (list[tuple[int, int, str]]): A list of tuples, where each tuple
+                                                   contains (row, col, formula_string).
+        alignment_str (str): The desired alignment as a string (LEFT, RIGHT, CENTER, or FLOAT).
+                             FLOAT sets both horizontal and vertical alignment to center.
+    """
+    # Parse the alignment string into an Alignment enum
+    alignment = self.parse_alignment(alignment_str)
+
+    alignment_value = alignment.value  # Get the enum value (e.g., 'LEFT', 'RIGHT', etc.)
+    
+    body = {
+        "requests": [
+            {
+                "repeatCell": {
+                    "range": {
+                        "sheetId": self.sheet.id,
+                        "startRowIndex": row - 1,  # API indices are zero-based
+                        "endRowIndex": row,
+                        "startColumnIndex": col - 1,
+                        "endColumnIndex": col,
+                    },
+                    "fields": "userEnteredFormat.horizontalAlignment, userEnteredFormat.verticalAlignment",
+                    "cell": {
+                        "userEnteredFormat": {
+                            "horizontalAlignment": "CENTER" if alignment_value == "FLOAT" else alignment_value,
+                            "verticalAlignment": "MIDDLE" if alignment_value == "FLOAT" else None
+                        }
+                    },
                 }
-                for row, col, _ in cell_updates
-            ]
-        }
-        try:
-            self.spreadsheet.batch_update(body)
-        except Exception as e:
-            print(f"Error setting cell alignment: {e}")
+            }
+            for row, col, _ in cell_updates
+        ]
+    }
+    
+    try:
+        self.spreadsheet.batch_update(body)
+    except Exception as e:
+        print(f"Error setting cell alignment: {e}")
+
+def parse_alignment(self, alignment_str: str) -> Alignment:
+    """
+    Converts the alignment string to an Alignment enum.
+    Args:
+        alignment_str (str): The alignment string to parse.
+    Returns:
+        Alignment: The corresponding Alignment enum value.
+    Raises:
+        ValueError: If the provided alignment string is not valid.
+    """
+    try:
+        return Alignment[alignment_str.upper()]
+    except KeyError:
+        raise ValueError(f"Invalid alignment value: {alignment_str}. "
+                         "Valid options are: 'LEFT', 'RIGHT', 'CENTER', 'FLOAT'.")
+
