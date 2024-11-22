@@ -15,35 +15,35 @@ class SheetUpdater:
         """Initialize with the Google Sheets worksheet instance."""
         self.sheet = worksheet
 
-    def update_image_formulas(self, cell_updates: list[tuple[int, int, str]]):
+    def update_image_formulas(self, cell_updates: list[tuple[int, int, str, str]]):
         """
         Updates the cells on the spreadsheet with the provided formulas.
-
+    
         Args:
-            cell_updates (list[tuple[int, int, str]]): A list of tuples, where each tuple
-                                                    contains (row, col, formula_string).
+            cell_updates (list[tuple[int, int, str, str]]): A list of tuples, where each tuple
+                                                    contains (row, col, name, formula_string).
         Example:
-            cell_updates = [(1, 1, '=IMAGE("https://example.com/image.png")'),
-                            (2, 1, '=IMAGE("https://example.com/another_image.jpg")')]
+            cell_updates = [(1, 1, 'Product1', '=IMAGE("https://example.com/image.png")'),
+                            (2, 1, 'Product2', '=IMAGE("https://example.com/another_image.jpg")')]
         """
-
+    
         cells_to_update = []  # List to store the Cell objects to update
-
-        for row, col, formula_string in cell_updates:
-              try:
-                  cells_to_update.append(gspread.Cell(row, col, formula_string)) #Create cell object from data provided in input
-              except Exception as e:
-                  print(f"Error updating cell ({row}, {col}): {e}")
-                  continue
-
+    
+        for row, col, _, formula_string in cell_updates:
+            try:
+                cells_to_update.append(gspread.Cell(row, col, formula_string))  # Create cell object from data provided in input
+            except Exception as e:
+                print(f"Error updating cell ({row}, {col}): {e}")
+                continue
+    
         try:
             if cells_to_update:
-                 self.sheet.update_cells(cells_to_update, value_input_option='USER_ENTERED')  # Update all cells in one go. USER_ENTERED makes sure that the formula string is parsed as a formula.
+                self.sheet.update_cells(cells_to_update, value_input_option='USER_ENTERED')  # Update all cells in one go. USER_ENTERED makes sure that the formula string is parsed as a formula.
             else:
-                print ("No cells to update.")
-
+                print("No cells to update.")
+    
         except Exception as e:
-                print(f"Error during batch update: {e}")
+            print(f"Error during batch update: {e}")
 
     def update_image_formulas_with_formatting(
             self,
