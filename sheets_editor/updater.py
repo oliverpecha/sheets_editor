@@ -1,4 +1,5 @@
 from enum import Enum
+import gspread
 
 class Alignment(Enum):
     """
@@ -78,8 +79,6 @@ class SheetUpdater:
         if alignment is not None:
             self.set_cell_alignment(cell_updates, alignment)
 
-
-
     def set_column_width(self, cell_updates, column_width: int):
          """Sets the width of the columns corresponding to the updated cells.
 
@@ -99,7 +98,7 @@ class SheetUpdater:
                        "range": {
                           "sheetId": self.sheet.id,
                           "dimension": "COLUMNS",
-                          "startIndex": col -1, # API indices are zero-based
+                          "startIndex": col - 1,  # API indices are zero-based
                           "endIndex": col
                        },
                        "properties": {
@@ -113,12 +112,9 @@ class SheetUpdater:
           }
 
          try:
-            self.spreadsheet.batch_update(body)
+            self.sheet.spreadsheet.batch_update(body)
          except Exception as e:
             print(f"Error setting column width: {e}")
-
-
-
 
     def set_row_height(self, cell_updates, row_height: int):
           """Sets the height of the rows corresponding to the updated cells.
@@ -153,24 +149,20 @@ class SheetUpdater:
           }
 
           try:
-            self.spreadsheet.batch_update(body)
+            self.sheet.spreadsheet.batch_update(body)
           except Exception as e:
             print(f"Error setting row height: {e}")
 
-
-    def set_cell_alignment(self, cell_updates, alignment_str: str):
+    def set_cell_alignment(self, cell_updates, alignment: Alignment):
         """
         Sets the alignment of the cells corresponding to the updated formulas.
     
         Args:
             cell_updates (list[tuple[int, int, str]]): A list of tuples, where each tuple
                                                        contains (row, col, formula_string).
-            alignment_str (str): The desired alignment as a string (LEFT, RIGHT, CENTER, or FLOAT).
-                                 FLOAT sets both horizontal and vertical alignment to center.
+            alignment (Alignment): The desired alignment (LEFT, RIGHT, CENTER, or FLOAT).
+                                   FLOAT sets both horizontal and vertical alignment to center.
         """
-        # Parse the alignment string into an Alignment enum
-        alignment = self.parse_alignment(alignment_str)
-    
         alignment_value = alignment.value  # Get the enum value (e.g., 'LEFT', 'RIGHT', etc.)
         
         body = {
@@ -198,23 +190,8 @@ class SheetUpdater:
         }
         
         try:
-            self.spreadsheet.batch_update(body)
+            self.sheet.spreadsheet.batch_update(body)
         except Exception as e:
             print(f"Error setting cell alignment: {e}")
-    
-    def parse_alignment(self, alignment_str: str) -> Alignment:
-        """
-        Converts the alignment string to an Alignment enum.
-        Args:
-            alignment_str (str): The alignment string to parse.
-        Returns:
-            Alignment: The corresponding Alignment enum value.
-        Raises:
-            ValueError: If the provided alignment string is not valid.
-        """
-        try:
-            return Alignment[alignment_str.upper()]
-        except KeyError:
-            raise ValueError(f"Invalid alignment value: {alignment_str}. "
-                         "Valid options are: 'LEFT', 'RIGHT', 'CENTER', 'FLOAT'.")
 
+# Now update the image
