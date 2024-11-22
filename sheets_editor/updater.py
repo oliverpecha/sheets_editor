@@ -127,7 +127,7 @@ class SheetUpdater:
               row_height (int): The desired height of the row in pixels.
           """
           rows_to_update = set()
-          for row, _, _ in cell_updates:
+          for row, _, _, _ in cell_updates:
               rows_to_update.add(row)
 
           body = {
