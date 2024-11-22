@@ -187,7 +187,7 @@ class SheetUpdater:
                         },
                     }
                 }
-                for row, col, _ in cell_updates
+                for row, col, _, _ in cell_updates
             ]
         }
         
