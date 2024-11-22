@@ -194,4 +194,18 @@ class SheetUpdater:
         except Exception as e:
             print(f"Error setting cell alignment: {e}")
 
-# Now update the image
+def parse_alignment(self, alignment_str: str) -> Alignment:
+        """
+        Converts the alignment string to an Alignment enum.
+        Args:
+            alignment_str (str): The alignment string to parse.
+        Returns:
+            Alignment: The corresponding Alignment enum value.
+        Raises:
+            ValueError: If the provided alignment string is not valid.
+        """
+        try:
+            return Alignment[alignment_str.upper()]
+        except KeyError:
+            raise ValueError(f"Invalid alignment value: {alignment_str}. "
+                             "Valid options are: 'LEFT', 'RIGHT', 'CENTER', 'FLOAT'.")
