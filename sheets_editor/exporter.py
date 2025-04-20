@@ -71,10 +71,15 @@ class SheetsExporter:
         if self.config.ignore_columns:
             columns = [c for c in columns if c not in self.config.ignore_columns]
     
+        # Check if worksheet exists without raising an exception
+        worksheet = None
         try:
             worksheet = spreadsheet.worksheet(sheet_name)
             worksheet.clear()  # Clear existing sheet if it exists
+            print(f"Cleared existing sheet: {sheet_name}")
         except gspread.WorksheetNotFound:
+            # Suppress the error output - just create a new worksheet
+            print(f"Sheet '{sheet_name}' not found. Creating a new one.")
             worksheet = spreadsheet.add_worksheet(title=sheet_name, rows=1000, cols=len(columns))
     
         # Write headers and data
