@@ -34,13 +34,18 @@ class SheetsExporter:
                 raise  # Re-raise the exception
 
     def export_table(
-        self, data: List[Dict], sheet_name: str, version: Optional[str] = None, #version is now optional
+        self, data: List[Dict], sheet_name: str, version: Optional[str] = None,
         columns: Optional[List[str]] = None,
         spreadsheet: Optional[gspread.Spreadsheet] = None,
         formatting: Optional[Dict] = None,
         conditional_formats: Optional[List[Dict]] = None
     ) -> None:
         """Exports data to a Google Sheet, handling existing sheets and optional versions."""
+    
+        # Check if data is empty and handle it gracefully
+        if not data:
+            print(f"⚠️ No data to export to sheet '{sheet_name}'. Skipping export process.")
+            return None
     
         if version:  # Append version if provided
             spreadsheet_name = f"{self.config.file_name}_{version}"
@@ -56,6 +61,11 @@ class SheetsExporter:
         # Determine columns if not provided
         if not columns and data:
             columns = list(data[0].keys())
+        
+        # Ensure columns is not empty
+        if not columns:
+            print(f"⚠️ No columns defined for export to sheet '{sheet_name}'. Creating a default column.")
+            columns = ["empty_data"]  # Use a default column name
     
         # Remove ignored columns
         if self.config.ignore_columns:
