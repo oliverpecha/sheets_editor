@@ -90,8 +90,14 @@ class SheetsExporter:
             worksheet.append_rows(rows)
     
         # Apply formatting if provided
-        if formatting or conditional_formats:
+        if formatting or conditional_formats: # 'formatting' here is your {(r,c):style} dict
             print("Applying formatting...")
-            self.formatter.format_worksheet(worksheet, formatting, conditional_formats or [])
+            self.formatter.format_worksheet(
+                worksheet=worksheet,
+                # general_rules_config=None, # Or pass a different dict if you have general rules
+                targeted_cell_formats=formatting, # This is your {(row,col):style} dict
+                conditional_formats=conditional_formats or []
+            )
+
          
         return spreadsheet.url
