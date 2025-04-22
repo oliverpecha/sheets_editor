@@ -84,65 +84,81 @@ class SheetFormatter:
             print(f"Error in export_table: {str(e)}")
             raise
 
-    def format_worksheet(self, worksheet, formatting_config=None, conditional_formats=None):
+    # In your SheetFormatter class
+
+    def format_worksheet(self,
+                         worksheet: gspread.Worksheet,
+                         # Renamed for clarity, this is for general rules
+                         general_rules_config: Optional[Dict[str, Any]] = None,
+                         # New parameter for targeted cell formats
+                         targeted_cell_formats: Optional[Dict[Tuple[int, int], Dict[str, Any]]] = None,
+                         conditional_formats: Optional[List[Dict[str, Any]]] = None):
         """
-        Main public method to format a worksheet with both absolute and conditional formatting.
-        
-        Args:
-            worksheet: The worksheet object to format
-            formatting_config: Optional dictionary containing absolute formatting rules
-            conditional_formats: Optional list of conditional formatting rules
+        Main public method to format a worksheet.
+        Handles general rules, targeted cell formats, and conditional formatting.
         """
         if self.debug_enabled:
-            print(f"\nFormatting worksheet: {worksheet.title}")
-            print(f"Absolute formatting config: {formatting_config}")
-            print(f"Number of conditional formats: {len(conditional_formats) if conditional_formats else 0}")
-    
-        # Get all values from worksheet
+            print(f"\nSheetFormatter: Formatting worksheet: {worksheet.title} (ID: {worksheet.id})")
+            print(f"SheetFormatter: Received general_rules_config: {general_rules_config}")
+            print(f"SheetFormatter: Received targeted_cell_formats: {targeted_cell_formats}") # Log the new input
+            print(f"SheetFormatter: Received conditional_formats count: {len(conditional_formats) if conditional_formats else 0}")
+
         values = worksheet.get_all_values()
         if not values:
-            print("No values found in worksheet")
-            return
-    
-        # Get worksheet properties
-        num_rows = len(values)
-        num_cols = len(values[0]) if values else 0
-        sheet_id = worksheet.id
-    
-        try:
-            # Initialize the formatting cache
-            self._initialize_cache(num_rows, num_cols)
-    
-            # Apply absolute formatting if configured
-            if formatting_config:
-                self._apply_absolute_formatting(formatting_config, sheet_id, num_rows, num_cols)
-    
-            # Apply conditional formatting if configured
-            if conditional_formats:
-                self._apply_conditional_formatting(conditional_formats, sheet_id, values)
-    
-            # Generate formatting requests
-            requests = self._generate_requests_from_cache(sheet_id, num_cols)
-            
             if self.debug_enabled:
-                print(f"\nGenerated {len(requests)} formatting requests")
+                print("SheetFormatter: No values found in worksheet, skipping formatting.")
+            return
+
+        num_sheet_rows = len(values)
+        num_sheet_cols = len(values[0]) if values else 0
+        sheet_id = worksheet.id
+
+        if num_sheet_rows == 0 or num_sheet_cols == 0:
+            if self.debug_enabled:
+                print("SheetFormatter: Worksheet is empty (0 rows or 0 cols), skipping formatting.")
+            return
+
+        try:
+            self._initialize_cache(num_sheet_rows, num_sheet_cols) # Cache based on actual sheet size
+
+            # Apply general absolute formatting rules first (e.g., alternate rows)
+            if general_rules_config:
+                self._apply_absolute_formatting(general_rules_config, sheet_id, num_sheet_rows, num_sheet_cols)
+
+            # Apply targeted cell-specific formatting (can override general rules)
+            if targeted_cell_formats: # Call the new method
+                self._apply_targeted_formatting(targeted_cell_formats, sheet_id, num_sheet_rows, num_sheet_cols)
+
+            # Apply conditional formatting
+            if conditional_formats:
+                self._apply_conditional_formatting(conditional_formats, sheet_id, values) # values is already all sheet values
+
+            # Generate and apply requests from the populated cache
+            requests = self._generate_requests_from_cache(sheet_id, num_sheet_cols)
+
+            if self.debug_enabled:
+                print(f"\nSheetFormatter: Generated {len(requests)} formatting requests from cache.")
                 if requests:
-                    print("Sample request:", requests[0])
-    
-            # Apply the formatting requests directly
+                    print("SheetFormatter: Sample request:", requests[0]) # Keep sample logging
+
             if requests:
                 try:
                     worksheet.spreadsheet.batch_update({"requests": requests})
                     if self.debug_enabled:
-                        print("✅ Successfully applied formatting requests")
-                except Exception as e:
-                    print(f"❌ Error applying formatting requests: {str(e)}")
+                        print("SheetFormatter: ✅ Successfully applied formatting requests via batch_update.")
+                except gspread.exceptions.APIError as e:
+                    print(f"SheetFormatter: ❌ APIError applying formatting requests: {e.response.text}")
                     raise
-    
-        except Exception as e:
-            print(f"Error during formatting: {str(e)}")
-            raise
+                except Exception as e:
+                    print(f"SheetFormatter: ❌ Error applying formatting requests: {str(e)}")
+                    raise
+            elif self.debug_enabled:
+                print("SheetFormatter: No formatting requests generated from cache to send.")
 
+        except Exception as e:
+            print(f"SheetFormatter: Error during formatting process: {str(e)}")
+            raise
+            
     def _initialize_cache(self, num_rows: int, num_cols: int):
         """Initialize the formatting cache for all cells in the sheet."""
         self.formatting_cache = {
@@ -309,7 +325,52 @@ class SheetFormatter:
                             print(f"Column: {column_name}, Value: {cell_value}")
                             print(f"Format applied: {merged_format}")
     
-    def _apply_all_conditions_formatting(self, format_rule, header, values, num_cols, debug_row):
+    def _apply_targeted_formatting(self,
+                                   targeted_formats: Dict[Tuple[int, int], Dict[str, Any]],
+                                   sheet_id: int,
+                                   num_sheet_rows: int, # Total rows in the sheet
+                                   num_sheet_cols: int): # Total columns in the sheet
+        """
+        Applies formatting to specific cells based on (row_index, col_index) keys.
+        Assumes row_index and col_index are 0-based relative to the data block (after header).
+        """
+        if self.debug_enabled:
+            print(f"\nSheetFormatter: _apply_targeted_formatting received {len(targeted_formats)} rules.")
+
+        if not targeted_formats:
+            if self.debug_enabled:
+                print("SheetFormatter: No targeted formats provided.")
+            return
+
+        # data_row_idx is 0-indexed *relative to the start of the data block* (i.e., after the header).
+        # data_col_idx is 0-indexed *relative to the start of the exported columns*.
+        header_offset = 1  # Because SheetsExporter adds one header row before data
+
+        for (data_row_idx, data_col_idx), cell_style in targeted_formats.items():
+            # Basic validation for the item structure
+            if not (isinstance(data_row_idx, int) and isinstance(data_col_idx, int) and isinstance(cell_style, dict)):
+                if self.debug_enabled:
+                    print(f"SheetFormatter: Warning - Invalid item in targeted_formats: ({data_row_idx},{data_col_idx}): {cell_style}. Skipping.")
+                continue
+
+            # Convert data-relative indices to 0-based sheet indices
+            actual_sheet_row_idx = data_row_idx + header_offset
+            actual_sheet_col_idx = data_col_idx # Assuming data_col_idx is already the 0-based sheet column index
+
+            # Boundary check against the actual sheet dimensions
+            if not (0 <= actual_sheet_row_idx < num_sheet_rows and 0 <= actual_sheet_col_idx < num_sheet_cols):
+                if self.debug_enabled:
+                    print(f"SheetFormatter: Warning - Skipping out-of-bounds targeted format. "
+                          f"Data coord: ({data_row_idx},{data_col_idx}) -> "
+                          f"Sheet coord: ({actual_sheet_row_idx},{actual_sheet_col_idx}). "
+                          f"Sheet dims: ({num_sheet_rows} R x {num_sheet_cols} C)")
+                continue
+
+            if self.debug_enabled:
+                print(f"SheetFormatter (Targeted): Updating cache for sheet_coord ({actual_sheet_row_idx},{actual_sheet_col_idx}) with style: {cell_style}")
+            self._update_cache(actual_sheet_row_idx, actual_sheet_col_idx, cell_style)
+
+def _apply_all_conditions_formatting(self, format_rule, header, values, num_cols, debug_row):
         """Handle all-conditions conditional formatting."""
         for row_idx, row in enumerate(values[1:], 1):
             conditions_met = True
