@@ -4,10 +4,19 @@ from typing import Any, Dict, List, Optional, Tuple
 #Version: "publish to production"
 
 class SheetFormatter:
-    def __init__(self):
-        """Initialize the formatting cache."""
+    def __init__(self, debug_enabled: bool = False):
+        """
+        Initialize the SheetFormatter.
+
+        Args:
+            debug_enabled (bool, optional): If True, enables debug print statements.
+                                            Defaults to False.
+        """
         self.formatting_cache = {}
-        self.debug_enabled = True
+        self.debug_enabled = debug_enabled
+        if self.debug_enabled:
+            print("SheetFormatter initialized with DEBUG ENABLED.")
+
         
     
 
