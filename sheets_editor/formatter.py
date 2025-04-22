@@ -4,98 +4,12 @@ from typing import Any, Dict, List, Optional, Tuple
 #Version: "publish to production"
 
 class SheetFormatter:
-     def __init__(self, debug_enabled: bool = False): # Add debug_enabled parameter with a default
-        """
-        Initialize the SheetFormatter.
-
-        Args:
-            debug_enabled (bool, optional): If True, enables debug print statements.
-                                            Defaults to False.
-        """
-        self.formatting_cache: Dict[int, Dict[int, Dict[str, Any]]] = {}
-        self.debug_enabled = debug_enabled # Set the instance attribute from the parameter
-        if self.debug_enabled:
-            print("SheetFormatter initialized with DEBUG ENABLED.") # Optional: confirm debug mode
-
+    def __init__(self):
+        """Initialize the formatting cache."""
+        self.formatting_cache = {}
+        self.debug_enabled = True
         
-    def export_table(self, data, version, sheet_name, spreadsheet, formatting=None, conditional_formats=None):
-        """
-        Export data to a Google Sheets worksheet with formatting support.
-        
-        Args:
-            data: List of dictionaries containing the data to export
-            version: Version string for tracking
-            sheet_name: Name of the sheet to create/update
-            spreadsheet: Google Sheets spreadsheet object
-            formatting: Optional dictionary containing absolute formatting rules
-            conditional_formats: Optional list of conditional formatting rules
-        """
-        try:
-            # Create or get worksheet
-            try:
-                worksheet = spreadsheet.worksheet(sheet_name)
-                print(f"Found existing worksheet: {sheet_name}")
-            except gspread.WorksheetNotFound:
-                worksheet = spreadsheet.add_worksheet(title=sheet_name, rows="1000", cols="26")
-                print(f"Created new worksheet: {sheet_name}")
     
-            # Handle empty data case
-            if not data:
-                worksheet.clear()
-                worksheet.update('A1', [['No data available']])
-                print("No data to export")
-                return worksheet
-    
-            # Convert data to DataFrame
-            df = pd.DataFrame(data)
-            
-            # Apply column ignoring if specified in config
-            if hasattr(self.config, 'ignore_columns') and self.config.ignore_columns:
-                df = df.drop(columns=self.config.ignore_columns, errors='ignore')
-                print(f"Ignored columns: {self.config.ignore_columns}")
-    
-            # Get headers and values
-            headers = df.columns.tolist()
-            values = df.values.tolist()
-    
-            # Prepare data for upload with headers
-            all_values = [headers] + values
-    
-            # Clear existing content
-            worksheet.clear()
-    
-            # Update the worksheet with data
-            worksheet.update('A1', all_values, value_input_option='RAW')
-            print(f"Updated worksheet with {len(values)} rows of data")
-    
-            # Apply formatting if provided
-            if formatting or conditional_formats:
-                print("Applying formatting...")
-                try:
-                    self.formatter.format_worksheet(
-                        worksheet=worksheet,
-                        formatting_config=formatting,
-                        conditional_formats=conditional_formats
-                    )
-                except Exception as e:
-                    print(f"Error applying formatting: {str(e)}")
-                    raise
-    
-            # Auto-resize columns to fit content
-            try:
-                worksheet.columns_auto_resize(0, len(headers))
-                print("Auto-resized columns")
-            except Exception as e:
-                print(f"Warning: Could not auto-resize columns: {str(e)}")
-    
-            # Return the worksheet for potential further operations
-            return worksheet
-    
-        except Exception as e:
-            print(f"Error in export_table: {str(e)}")
-            raise
-
-    # In your SheetFormatter class
 
     def format_worksheet(self,
                          worksheet: gspread.Worksheet,
