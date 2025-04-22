@@ -4,10 +4,19 @@ from typing import Any, Dict, List, Optional, Tuple
 #Version: "publish to production"
 
 class SheetFormatter:
-    def __init__(self):
-        """Initialize the formatting cache."""
-        self.formatting_cache = {}
-        self.debug_enabled = True
+     def __init__(self, debug_enabled: bool = False): # Add debug_enabled parameter with a default
+        """
+        Initialize the SheetFormatter.
+
+        Args:
+            debug_enabled (bool, optional): If True, enables debug print statements.
+                                            Defaults to False.
+        """
+        self.formatting_cache: Dict[int, Dict[int, Dict[str, Any]]] = {}
+        self.debug_enabled = debug_enabled # Set the instance attribute from the parameter
+        if self.debug_enabled:
+            print("SheetFormatter initialized with DEBUG ENABLED.") # Optional: confirm debug mode
+
         
     def export_table(self, data, version, sheet_name, spreadsheet, formatting=None, conditional_formats=None):
         """
